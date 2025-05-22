@@ -170,7 +170,7 @@ export default function Home() {
                 <button
                   onClick={handleReset}
                   className="mt-6 btn-secondary"
-                >
+                >ge
                   Upload New Bill
                 </button>
               </div>
