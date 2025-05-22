@@ -2,6 +2,7 @@ export interface ReceiptItem {
     id: string;
     name: string;
     price: number;
+    quantity: number;
     assignedTo: string[];
 }
 
@@ -19,6 +20,7 @@ export interface BillSummary {
                 id: string;
                 name: string;
                 price: number;
+                quantity: number;
                 share: number;
             }[];
         };

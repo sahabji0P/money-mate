@@ -13,8 +13,6 @@ export default function BillSplitter({ items }: BillSplitterProps) {
         { id: '1', name: 'You' },
     ]);
     const [newPersonName, setNewPersonName] = useState('');
-    const [tip, setTip] = useState(0);
-    const [tax, setTax] = useState(0);
     const [copied, setCopied] = useState(false);
 
     // Make a local copy of items to manage assignment
@@ -65,24 +63,16 @@ export default function BillSplitter({ items }: BillSplitterProps) {
         })));
     };
 
-    // Add tip/tax as pseudo-items for summary
-    const allItemsWithExtras = useMemo(() => {
-        let arr = [...splittableItems];
-        if (tip > 0) arr.push({ id: 'tip', name: 'Tip', price: tip, assignedTo: people.map(p => p.id) });
-        if (tax > 0) arr.push({ id: 'tax', name: 'Tax', price: tax, assignedTo: people.map(p => p.id) });
-        return arr;
-    }, [splittableItems, tip, tax, people]);
-
     // Per-person summary calculation
     const billSummary = useMemo(() => {
         const summary: BillSummary = {
-            total: allItemsWithExtras.reduce((sum, item) => sum + item.price, 0),
+            total: splittableItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
             perPerson: {},
         };
         people.forEach(person => {
-            const personItems = allItemsWithExtras.filter(item => item.assignedTo.includes(person.id));
+            const personItems = splittableItems.filter(item => item.assignedTo.includes(person.id));
             const total = personItems.reduce((sum, item) => {
-                const share = item.price / item.assignedTo.length;
+                const share = (item.price * item.quantity) / item.assignedTo.length;
                 return sum + share;
             }, 0);
             summary.perPerson[person.id] = {
@@ -91,12 +81,13 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                     id: item.id,
                     name: item.name,
                     price: item.price,
-                    share: item.price / item.assignedTo.length,
+                    quantity: item.quantity,
+                    share: (item.price * item.quantity) / item.assignedTo.length,
                 })),
             };
         });
         return summary;
-    }, [allItemsWithExtras, people]);
+    }, [splittableItems, people]);
 
     // Share summary (copy to clipboard)
     const handleShare = () => {
@@ -104,7 +95,7 @@ export default function BillSplitter({ items }: BillSplitterProps) {
         people.forEach(person => {
             text += `\n${person.name}: $${billSummary.perPerson[person.id]?.total.toFixed(2) || '0.00'}\n`;
             billSummary.perPerson[person.id]?.items.forEach(item => {
-                text += `  - ${item.name}: $${item.share.toFixed(2)}\n`;
+                text += `  - ${item.name}${item.quantity > 1 ? ` (x${item.quantity})` : ''}: $${item.share.toFixed(2)}\n`;
             });
         });
         text += `\nTotal: $${billSummary.total.toFixed(2)}`;
@@ -162,8 +153,11 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                     {splittableItems.map((item) => (
                         <div key={item.id} className="rounded-xl bg-white shadow-sm border border-gray-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between transition-all">
                             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 flex-1">
-                                <span className="font-medium text-gray-900">{item.name}</span>
-                                <span className="text-gray-700">${item.price.toFixed(2)}</span>
+                                <span className="font-medium text-gray-900">
+                                    {item.name}
+                                    {item.quantity > 1 && <span className="ml-2 text-gray-500 text-sm">x{item.quantity}</span>}
+                                </span>
+                                <span className="text-gray-700">${(item.price * item.quantity).toFixed(2)}</span>
                             </div>
                             <div className="flex gap-2 mt-2 md:mt-0 flex-wrap">
                                 {people.map((person) => (
@@ -184,32 +178,6 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                 </div>
             </div>
 
-            {/* Tip/Tax Fields */}
-            <div className="flex gap-4 items-center">
-                <div className="flex flex-col">
-                    <label className="text-gray-700 font-medium mb-1">Tip</label>
-                    <input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        value={tip}
-                        onChange={e => setTip(parseFloat(e.target.value) || 0)}
-                        className="rounded-md border border-gray-300 px-2 py-1 w-24 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <div className="flex flex-col">
-                    <label className="text-gray-700 font-medium mb-1">Tax</label>
-                    <input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        value={tax}
-                        onChange={e => setTax(parseFloat(e.target.value) || 0)}
-                        className="rounded-md border border-gray-300 px-2 py-1 w-24 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-            </div>
-
             {/* Per-Person Summary */}
             <div className="grid md:grid-cols-2 gap-6">
                 {people.map((person) => (
@@ -220,7 +188,10 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                         <ul className="mb-2 text-blue-900">
                             {billSummary.perPerson[person.id]?.items.map(item => (
                                 <li key={item.id} className="flex justify-between text-sm mb-1">
-                                    <span>{item.name}</span>
+                                    <span>
+                                        {item.name}
+                                        {item.quantity > 1 && <span className="ml-1 text-gray-500">x{item.quantity}</span>}
+                                    </span>
                                     <span>${item.share.toFixed(2)}</span>
                                 </li>
                             ))}

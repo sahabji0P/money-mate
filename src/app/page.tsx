@@ -26,6 +26,19 @@ export default function Home() {
     setStep(2); // Go to review items step
   };
 
+  const handleManualEntry = () => {
+    // Start with a single empty item
+    setReceiptItems([{
+      id: `new-item-${Date.now()}`,
+      name: '',
+      price: 0,
+      quantity: 1,
+      assignedTo: []
+    }]);
+    setImagePreview(null);
+    setStep(2); // Go to review items step
+  };
+
   const handleItemsFinalized = (finalizedItems: ReceiptItem[]) => {
     setReceiptItems(finalizedItems);
     setStep(3); // Go to split step
@@ -113,7 +126,7 @@ export default function Home() {
               </button>
               <button
                 className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-[var(--color-accent)] bg-white hover:bg-[var(--color-accent-light)] text-[var(--color-accent)] shadow transition-all w-full btn-secondary text-lg font-semibold"
-                onClick={() => alert('Manual entry coming soon!')}
+                onClick={handleManualEntry}
               >
                 <span className="text-3xl">✍️</span>
                 Enter Manually
@@ -147,27 +160,39 @@ export default function Home() {
 
         {/* Step 2: Review and Finalize Items */}
         {step === 2 && (
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* Left: Image Preview */}
-            <div className="flex-1 flex flex-col items-center">
-              {imagePreview && (
+          <div className={`flex flex-col ${imagePreview ? '' : ''} gap-8`}>
+            {/* Left: Image Preview (only if available) */}
+            {imagePreview && (
+              <div className="flex-1 flex flex-col items-center">
                 <div className="w-full max-w-xs rounded-xl overflow-hidden shadow-md border border-gray-200 bg-gray-50">
                   <img src={imagePreview} alt="Receipt Preview" className="w-full object-contain" />
                 </div>
-              )}
-              <button
-                onClick={handleReset}
-                className="mt-6 btn-secondary"
-              >
-                Upload New Bill
-              </button>
-            </div>
+                <button
+                  onClick={handleReset}
+                  className="mt-6 btn-secondary"
+                >
+                  Upload New Bill
+                </button>
+              </div>
+            )}
+
             {/* Right: Item Editor */}
-            <div className="flex-1">
+            <div className={imagePreview ? "flex-1" : "w-full"}>
               <ReceiptItemEditor
                 items={receiptItems}
                 onItemsFinalized={handleItemsFinalized}
+                isManualEntry={!imagePreview}
               />
+              {!imagePreview && (
+                <div className="mt-4 flex justify-start">
+                  <button
+                    onClick={handleReset}
+                    className="btn-secondary"
+                  >
+                    Back
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

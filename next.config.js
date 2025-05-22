@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    reactStrictMode: true,
+    reactStrictMode: false,
     images: {
         domains: ['*'],
         remotePatterns: [
@@ -10,6 +10,8 @@ const nextConfig = {
             },
         ],
     },
+    swcMinify: true,
+    output: 'standalone',
 };
 
 module.exports = nextConfig; 

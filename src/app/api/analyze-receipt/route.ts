@@ -15,10 +15,10 @@ async function analyzeReceiptWithGemini(base64Image: string): Promise<ReceiptIte
     if (!genAI) {
         console.warn('GOOGLE_GEMINI_API_KEY is not set. Returning mock data.');
         return [
-            { id: 'item-1', name: 'Burger', price: 12.99, assignedTo: [] },
-            { id: 'item-2', name: 'Fries', price: 4.99, assignedTo: [] },
-            { id: 'item-3', name: 'Soda', price: 2.49, assignedTo: [] },
-            { id: 'item-4', name: 'Ice Cream', price: 5.99, assignedTo: [] },
+            { id: 'item-1', name: 'Burger', price: 12.99, quantity: 1, assignedTo: [] },
+            { id: 'item-2', name: 'Fries', price: 4.99, quantity: 1, assignedTo: [] },
+            { id: 'item-3', name: 'Soda', price: 2.49, quantity: 2, assignedTo: [] },
+            { id: 'item-4', name: 'Ice Cream', price: 5.99, quantity: 1, assignedTo: [] },
         ];
     }
 
@@ -35,6 +35,7 @@ Return a single JSON object with the following structure:
       "id": "unique_id",
       "name": "exact item name as shown on receipt",
       "price": price_as_number,
+      "quantity": quantity_as_number,
       "assignedTo": []
     }
   ]
@@ -46,7 +47,7 @@ IMPORTANT INSTRUCTIONS:
 3. Keep item names exactly as they appear on the receipt
 4. Convert prices to numbers (remove currency symbols)
 5. Ensure the JSON is valid and follows the exact structure shown above
-6. If an item has a quantity, multiply the price by the quantity`;
+6. Set quantity to 1 by default unless you can clearly identify a quantity`;
 
         const parts = [
             { text: prompt },
@@ -74,15 +75,14 @@ IMPORTANT INSTRUCTIONS:
                         name.includes('subtotal') ||
                         name.includes('cash') ||
                         name.includes('change') ||
-                        name.includes('payment') ||
-                        name.includes('tax') ||
-                        name.includes('tip')
+                        name.includes('payment')
                     );
                 })
                 .map((item: any, index: number) => ({
                     id: item.id || `item-${index + 1}`,
                     name: item.name,
                     price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+                    quantity: item.quantity || 1, // Default to 1 if not provided
                     assignedTo: [],
                 }));
         } catch (e) {
@@ -99,15 +99,14 @@ IMPORTANT INSTRUCTIONS:
                             name.includes('subtotal') ||
                             name.includes('cash') ||
                             name.includes('change') ||
-                            name.includes('payment') ||
-                            name.includes('tax') ||
-                            name.includes('tip')
+                            name.includes('payment')
                         );
                     })
                     .map((item: any, index: number) => ({
                         id: item.id || `item-${index + 1}`,
                         name: item.name,
                         price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+                        quantity: item.quantity || 1, // Default to 1 if not provided
                         assignedTo: [],
                     }));
             }
