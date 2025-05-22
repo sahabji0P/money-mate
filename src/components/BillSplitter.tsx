@@ -7,9 +7,10 @@ import { useMemo, useRef, useState } from 'react';
 
 interface BillSplitterProps {
     items: ReceiptItem[];
+    onEditItems: () => void;
 }
 
-export default function BillSplitter({ items }: BillSplitterProps) {
+export default function BillSplitter({ items, onEditItems }: BillSplitterProps) {
     const [people, setPeople] = useState<Person[]>([
         { id: '1', name: 'You' },
     ]);
@@ -160,7 +161,11 @@ export default function BillSplitter({ items }: BillSplitterProps) {
         <div className="space-y-8">
             {/* Who's Splitting Section */}
             <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">Who&apos;s Splitting?</h2>
+                <div className="text-center mb-4">
+                    <div className="text-3xl font-bold text-[var(--color-accent)] mb-2">Split.</div>
+                    <div className="text-base font-semibold text-[var(--color-text)] max-w-xl mx-auto">See who owes what, no math, no drama.</div>
+                </div>
+                <h2 className="text-lg font-semibold text-[var(--color-text)] mb-2">Who&apos;s Splitting?</h2>
                 <div className="flex flex-wrap gap-2 mb-3">
                     {people.map(person => (
                         <span key={person.id} className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium shadow-sm">
@@ -179,7 +184,7 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                         value={newPersonName}
                         onChange={(e) => setNewPersonName(e.target.value)}
                         placeholder="Add person name"
-                        className="flex-1 rounded-lg text-black border border-gray-300 px-4 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 rounded-lg text-[var(--color-text)] border border-gray-300 px-4 py-2 bg-[#262626] focus:outline-none focus:ring-2 focus:ring-blue-500"
                         onKeyPress={(e) => e.key === 'Enter' && addPerson()}
                     />
                     <button
@@ -200,74 +205,99 @@ export default function BillSplitter({ items }: BillSplitterProps) {
 
             {/* Assign Items Section */}
             <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">Assign Items</h2>
+                <h2 className="text-lg font-semibold text-[var(--color-text)] mb-2">Assign Items</h2>
+                <div className="flex justify-end mb-2">
+                    <button
+                        onClick={onEditItems}
+                        className="text-[var(--color-accent)] hover:underline px-4 py-2 rounded-lg"
+                    >
+                        Edit Items
+                    </button>
+                </div>
                 <div className="grid gap-4">
                     {splittableItems.map((item) => (
-                        <div key={item.id} className="rounded-xl bg-white shadow-sm border border-gray-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between transition-all">
-                            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 flex-1">
-                                <span className="font-medium text-gray-900">
-                                    {item.name}
-                                    {item.quantity > 1 && <span className="ml-2 text-gray-500 text-sm">x{item.quantity}</span>}
+                        <div
+                            key={item.id}
+                            className={`p-4 rounded-lg border ${item.name.toLowerCase() === 'tax' || item.name.toLowerCase() === 'tip'
+                                ? 'bg-[#262626] border-gray-400'
+                                : 'bg-[#1a1a1a] border-gray-600'
+                                }`}
+                        >
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium text-[var(--color-text)]">
+                                    {item.name} {item.quantity > 1 && `(x${item.quantity})`}
                                 </span>
-                                <span className="text-gray-700">${(item.price * item.quantity).toFixed(2)}</span>
+                                <span className="font-semibold text-[var(--color-text)]">
+                                    ${(item.price * item.quantity).toFixed(2)}
+                                </span>
                             </div>
-                            <div className="flex gap-2 mt-2 md:mt-0 flex-wrap">
-                                {people.map((person) => (
-                                    <button
-                                        key={person.id}
-                                        onClick={() => toggleItemAssignment(item.id, person.id)}
-                                        className={`rounded-full px-4 py-1 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 ${item.assignedTo.includes(person.id)
-                                            ? 'bg-blue-100 text-blue-700 border-blue-300 shadow'
-                                            : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-blue-50'
-                                            }`}
-                                    >
-                                        {person.name}
-                                    </button>
-                                ))}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {people.map(person => {
+                                    const isAssigned = item.assignedTo.includes(person.id);
+                                    const isDisabled = (item.name.toLowerCase() === 'tax' || item.name.toLowerCase() === 'tip');
+                                    return (
+                                        <button
+                                            key={person.id}
+                                            onClick={() => toggleItemAssignment(item.id, person.id)}
+                                            disabled={isDisabled}
+                                            className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${isAssigned
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-700 text-[var(--color-text)]'
+                                                } ${isDisabled ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90'}`}
+                                        >
+                                            {person.name}
+                                        </button>
+                                    );
+                                })}
                             </div>
+                            {item.assignedTo.length > 0 && (
+                                <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                                    Split: ${((item.price * item.quantity) / item.assignedTo.length).toFixed(2)} per person
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Per-Person Summary */}
-            <div ref={summaryRef} className="grid md:grid-cols-2 gap-6 p-4 rounded-xl bg-white shadow">
-                <div className="md:col-span-2 mb-2">
-                    <h2 className="text-xl font-bold text-center text-gray-800 mb-2">Bill Split Summary</h2>
-                    <p className="text-center text-gray-500 text-sm">
-                        {new Date().toLocaleDateString()}
-                    </p>
-                </div>
+            {/* Bill Split Summary */}
+            <div>
+                <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4">Bill Split Summary</h2>
+                <div ref={summaryRef} className="bg-white rounded-lg p-6 shadow-lg">
+                    <div className="text-center mb-4">
+                        <h3 className="text-xl font-bold text-gray-900">Bill Split Summary</h3>
+                        <p className="text-gray-500 text-sm">{new Date().toLocaleDateString()}</p>
+                    </div>
 
-                {people.map((person) => (
-                    <div key={person.id} className="rounded-2xl bg-blue-50 border border-blue-100 shadow-lg p-6">
-                        <h3 className="mb-2 text-lg font-semibold text-blue-900 flex items-center gap-2">
-                            <UserIcon className="h-5 w-5" /> {person.name}
-                        </h3>
-                        <ul className="mb-2 text-blue-900">
-                            {billSummary.perPerson[person.id]?.items.map(item => (
-                                <li key={item.id} className="flex justify-between text-sm mb-1">
-                                    <span>
-                                        {item.name}
-                                        {item.quantity > 1 && <span className="ml-1 text-gray-500">x{item.quantity}</span>}
-                                    </span>
-                                    <span>${item.share.toFixed(2)}</span>
-                                </li>
-                            ))}
-                        </ul>
-                        <div className="flex justify-between font-bold text-blue-800 border-t border-blue-200 pt-2 mt-2">
-                            <span>Total</span>
-                            <span>${billSummary.perPerson[person.id]?.total.toFixed(2) || '0.00'}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {people.map(person => (
+                            <div key={person.id} className="p-4 bg-blue-50 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <UserIcon className="h-5 w-5 text-blue-700" />
+                                    <h4 className="font-bold text-blue-900">{person.name}</h4>
+                                </div>
+                                <div className="text-lg font-bold text-blue-900 mb-2">
+                                    Total: ${billSummary.perPerson[person.id]?.total.toFixed(2) || '0.00'}
+                                </div>
+                                <ul className="text-sm text-gray-600 space-y-1">
+                                    {billSummary.perPerson[person.id]?.items.map(item => (
+                                        <li key={item.id} className="flex justify-between">
+                                            <span>{item.name}{item.quantity > 1 ? ` (x${item.quantity})` : ''}</span>
+                                            <span>${item.share.toFixed(2)}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+                        <div className="text-lg font-bold text-gray-900">
+                            Total: ${billSummary.total.toFixed(2)}
                         </div>
-                    </div>
-                ))}
-
-                <div className="md:col-span-2 mt-2 text-center">
-                    <div className="font-bold text-lg">
-                        Total: ${billSummary.total.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">
-                        Generated by Money Mate
+                        <div className="text-xs text-gray-500 mt-2">
+                            Generated by Money Mate
+                        </div>
                     </div>
                 </div>
             </div>
@@ -283,19 +313,19 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                 </button>
 
                 {showShareOptions && (
-                    <div className="absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-lg p-2 z-10 w-48">
+                    <div className="absolute bottom-full right-0 mb-2 bg-[#262626] border border-gray-600 rounded-lg shadow-lg p-2 z-10 w-48">
                         <button
                             onClick={copyToClipboard}
-                            className="flex items-center gap-2 w-full py-2 px-3 hover:bg-gray-100 rounded text-left"
+                            className="flex items-center gap-2 w-full py-2 px-3 hover:bg-gray-700 rounded text-left text-[var(--color-text)]"
                         >
-                            <ClipboardIcon className="h-5 w-5 text-gray-600" />
+                            <ClipboardIcon className="h-5 w-5 text-[var(--color-text-secondary)]" />
                             <span>{copied ? 'Copied!' : 'Copy as text'}</span>
                         </button>
                         <button
                             onClick={downloadAsImage}
-                            className="flex items-center gap-2 w-full py-2 px-3 hover:bg-gray-100 rounded text-left"
+                            className="flex items-center gap-2 w-full py-2 px-3 hover:bg-gray-700 rounded text-left text-[var(--color-text)]"
                         >
-                            <DocumentArrowDownIcon className="h-5 w-5 text-gray-600" />
+                            <DocumentArrowDownIcon className="h-5 w-5 text-[var(--color-text-secondary)]" />
                             <span>Download as image</span>
                         </button>
                     </div>

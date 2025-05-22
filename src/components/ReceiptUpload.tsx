@@ -93,17 +93,21 @@ export default function ReceiptUpload({
 
     return (
         <div className="flex flex-col items-center">
+            <div className="text-center mb-2">
+                <div className="text-3xl font-bold text-[var(--color-accent)] mb-2">Scan.</div>
+                <div className="text-base font-semibold text-gray-500 max-w-xl mx-auto">Snap the receipt, no math, no drama.</div>
+            </div>
             {!localPreview ? (
                 <div
                     {...getRootProps()}
-                    className={`transition-all border-2 border-dashed rounded-xl bg-white shadow-md flex flex-col items-center justify-center p-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 hover:shadow-lg ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                    className={`transition-all border-2 border-dashed rounded-xl bg-white shadow-md flex flex-col items-center justify-center p-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 hover:shadow-lg ${isDragActive ? 'border-red-500 bg-red-500' : 'border-red-500'
                         } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     style={{ minHeight: '250px', width: '100%' }}
                 >
                     <input {...getInputProps()} disabled={isLoading} />
-                    <PhotoIcon className="mx-auto h-14 w-14 text-blue-500 mb-2" />
-                    <p className="text-base font-medium text-gray-700 mb-1">Drag and drop a receipt image, or click to select</p>
-                    <p className="text-xs text-gray-400">JPG, PNG up to 5MB</p>
+                    <PhotoIcon className="mx-auto h-14 w-14 text-red-500 mb-2" />
+                    <p className="text-base font-medium text-black mb-1">Drag and drop a receipt image, or click to select</p>
+                    <p className="text-xs text-black">JPG, PNG up to 5MB</p>
                 </div>
             ) : (
                 <div className="w-full max-w-md rounded-xl overflow-hidden border border-gray-200 shadow-md flex flex-col items-center">

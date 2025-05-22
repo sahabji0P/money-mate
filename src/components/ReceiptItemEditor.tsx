@@ -100,16 +100,23 @@ export default function ReceiptItemEditor({ items, onItemsFinalized, isManualEnt
 
     return (
         <div className="space-y-6">
+            <div className="text-center mb-2">
+                <div className="text-3xl font-bold text-[var(--color-accent)] mb-2">Tap.</div>
+                <div className="text-base font-semibold text-[var(--color-text)] max-w-xl mx-auto">Tap your items, no math, no drama.</div>
+            </div>
             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">
+                <h2 className="text-xl font-bold text-[var(--color-text)]">
                     {isManualEntry ? 'Enter Receipt Items' : 'Review & Edit Items'}
                 </h2>
+                <span className="text-sm font-bold underline text-red-500">
+                    {isManualEntry ? 'All the fields are necessary!' : 'The items with no price should be deleted!'}
+                </span>
 
             </div>
 
             <div className="space-y-3">
                 {/* Table header */}
-                <div className="grid grid-cols-12 gap-2 py-2 font-medium text-gray-700 border-b border-gray-200">
+                <div className="grid grid-cols-12 gap-2 py-2 font-medium text-[var(--color-text)] border-b border-gray-200">
                     <div className="col-span-4">Item</div>
                     <div className="col-span-2 text-center">Price</div>
                     <div className="col-span-2 text-center">Quantity</div>
@@ -125,7 +132,7 @@ export default function ReceiptItemEditor({ items, onItemsFinalized, isManualEnt
                                 type="text"
                                 value={item.name}
                                 onChange={e => updateItem(item.id, 'name', e.target.value)}
-                                className="w-full rounded border border-gray-300 px-2 py-1"
+                                className="w-full rounded border border-gray-300 px-2 py-1 bg-[#262626] text-[var(--color-text)]"
                                 placeholder="Item name"
                             />
                         </div>
@@ -135,7 +142,7 @@ export default function ReceiptItemEditor({ items, onItemsFinalized, isManualEnt
                                 step="0.01"
                                 value={item.price}
                                 onChange={e => updateItem(item.id, 'price', e.target.value)}
-                                className="w-full rounded border border-gray-300 px-2 py-1 text-right"
+                                className="w-full rounded border border-gray-300 px-2 py-1 text-right bg-[#262626] text-[var(--color-text)]"
                                 placeholder="0.00"
                             />
                         </div>
@@ -146,10 +153,10 @@ export default function ReceiptItemEditor({ items, onItemsFinalized, isManualEnt
                                 step="1"
                                 value={item.quantity}
                                 onChange={e => updateItem(item.id, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
-                                className="w-full rounded border border-gray-300 px-2 py-1 text-center"
+                                className="w-full rounded border border-gray-300 px-2 py-1 text-center bg-[#262626] text-[var(--color-text)]"
                             />
                         </div>
-                        <div className="col-span-2 text-right font-medium">
+                        <div className="col-span-2 text-right font-medium text-[var(--color-text)]">
                             ${(item.price * item.quantity).toFixed(2)}
                         </div>
                         <div className="col-span-2 flex justify-end space-x-2">
@@ -175,44 +182,44 @@ export default function ReceiptItemEditor({ items, onItemsFinalized, isManualEnt
                 </button>
 
                 {editableItems.length === 0 && (
-                    <div className="py-4 text-center text-gray-500">
+                    <div className="py-4 text-center text-[var(--color-text-secondary)]">
                         No items yet. Click the + button to add items.
                     </div>
                 )}
 
                 {/* Subtotal */}
                 <div className="grid grid-cols-12 gap-2 py-3 font-medium border-t border-gray-200">
-                    <div className="col-span-8 text-right">Subtotal</div>
-                    <div className="col-span-4 text-right">${subtotal.toFixed(2)}</div>
+                    <div className="col-span-8 text-right text-[var(--color-text)]">Subtotal</div>
+                    <div className="col-span-4 text-right text-[var(--color-text)]">${subtotal.toFixed(2)}</div>
                 </div>
 
                 {/* Tax and Tip */}
                 <div className="grid grid-cols-12 gap-4 py-3 items-center">
                     <div className="col-span-2 text-right md:text-left">
-                        <label className="font-medium text-gray-700">Tax</label>
+                        <label className="font-medium text-[var(--color-text)]">Tax</label>
                     </div>
-                    <div className="col-span-4 md:col-span-3">
+                    <div className="col-span-4">
                         <input
                             type="number"
-                            min="0"
                             step="0.01"
+                            min="0"
                             value={tax}
-                            onChange={e => setTax(parseFloat(e.target.value) || 0)}
-                            className="w-full rounded border border-gray-300 px-2 py-1 text-right"
+                            onChange={e => setTax(Number(e.target.value))}
+                            className="w-full rounded border border-gray-300 px-2 py-1 text-right bg-[#262626] text-[var(--color-text)]"
                             placeholder="0.00"
                         />
                     </div>
                     <div className="col-span-2 text-right md:text-left">
-                        <label className="font-medium text-gray-700">Tip</label>
+                        <label className="font-medium text-[var(--color-text)]">Tip</label>
                     </div>
-                    <div className="col-span-4 md:col-span-3">
+                    <div className="col-span-4">
                         <input
                             type="number"
-                            min="0"
                             step="0.01"
+                            min="0"
                             value={tip}
-                            onChange={e => setTip(parseFloat(e.target.value) || 0)}
-                            className="w-full rounded border border-gray-300 px-2 py-1 text-right"
+                            onChange={e => setTip(Number(e.target.value))}
+                            className="w-full rounded border border-gray-300 px-2 py-1 text-right bg-[#262626] text-[var(--color-text)]"
                             placeholder="0.00"
                         />
                     </div>
@@ -220,8 +227,8 @@ export default function ReceiptItemEditor({ items, onItemsFinalized, isManualEnt
 
                 {/* Total */}
                 <div className="grid grid-cols-12 gap-2 py-3 font-bold border-t border-gray-300">
-                    <div className="col-span-8 text-right">Total</div>
-                    <div className="col-span-4 text-right">${total.toFixed(2)}</div>
+                    <div className="col-span-8 text-right text-[var(--color-text)]">Total</div>
+                    <div className="col-span-4 text-right text-[var(--color-text)]">${total.toFixed(2)}</div>
                 </div>
             </div>
 

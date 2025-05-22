@@ -5,7 +5,11 @@ import ReceiptItemEditor from '@/components/ReceiptItemEditor';
 import ReceiptUpload from '@/components/ReceiptUpload';
 import { ReceiptItem } from '@/types/receipt';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
+
+// Social icons
+import { FaGithub, FaGlobe, FaTwitter } from 'react-icons/fa';
 
 declare global {
   interface Window {
@@ -102,26 +106,22 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center py-8 bg-[var(--color-bg)]">
       {/* Header */}
-      <header className="w-full max-w-5xl flex items-center justify-between mb-8 px-4">
+      <header className="w-full max-w-5xl flex items-center justify-center mb-8 px-4">
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold tracking-tight text-[var(--color-accent)] flex items-center gap-2">
-            <span className="inline-block w-7 h-7 bg-[var(--color-accent)] rounded-lg flex items-center justify-center text-white font-bold">$</span>
+          <span className="text-3xl font-bold tracking-tight text-[var(--color-accent)] flex items-center gap-2">
+            <span className="inline-block w-8 h-8 bg-[var(--color-accent)] rounded-lg flex items-center justify-center text-white font-bold">$</span>
             Money Mate
           </span>
         </div>
-        {/* Placeholder for sign-in */}
-        <button className="rounded-full px-4 py-2 bg-[var(--color-accent-light)] text-[var(--color-accent)] font-medium shadow hover:bg-[var(--color-accent)] hover:text-white transition-all" disabled>
-          Sign in
-        </button>
       </header>
       <div className="w-full max-w-3xl card p-8 flex flex-col gap-8 mx-auto">
-        {step > 0 && <Stepper />}
+        {step > 0}
         {/* Step 0: Choose input method */}
         {step === 0 && (
           <div className="flex flex-col items-center justify-center gap-8">
             <div className="text-center mb-2">
               <div className="text-3xl font-bold text-[var(--color-accent)] mb-2">Scan. Tap. Split.</div>
-              <div className="text-base text-gray-500 max-w-xl mx-auto">Snap the receipt, tap your items, see who owes what. No sign-ups, no math, no drama.</div>
+              <div className="text-base text-white max-w-xl mx-auto">Snap the receipt, tap your items, see who owes what. No sign-ups, no math, no drama.</div>
             </div>
             <div className="flex flex-col gap-4 w-full max-w-xs mx-auto">
               <button
@@ -198,36 +198,63 @@ export default function Home() {
                 isManualEntry={!imagePreview}
               />
               {!imagePreview && (
-                <div className="mt-4 flex justify-start">
-                  <button
-                    onClick={handleReset}
-                    className="btn-secondary"
-                  >
-                    Back
-                  </button>
-                </div>
+                <button
+                  onClick={handleReset}
+                  className="mt-6 btn-secondary"
+                >
+                  Back
+                </button>
               )}
             </div>
           </div>
         )}
 
-        {/* Step 3: Assign and Split */}
+        {/* Step 3: Bill Splitter */}
         {step === 3 && (
-          <div className="flex flex-col gap-8">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">Split Your Bill</h2>
+          <div>
+            <BillSplitter
+              items={receiptItems}
+              onEditItems={() => setStep(2)}
+            />
+            <div className="flex justify-between mt-8">
               <button
                 onClick={() => setStep(2)}
-                className="btn-secondary text-sm px-4 py-2"
+                className="btn-secondary"
               >
-                Edit Items
+                Back
               </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleReset}
+                  className="text-[var(--color-text)] hover:underline"
+                >
+                  Start Over
+                </button>
+              </div>
             </div>
-
-            <BillSplitter items={receiptItems} />
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="mt-auto pt-12 pb-6 w-full text-center">
+        <div className="footer-divider mb-6"></div>
+
+        <div className="social-icons">
+          <Link href="https://twitter.com/itsshashwatj" target="_blank" aria-label="Twitter">
+            <FaTwitter size={24} className="social-icon" />
+          </Link>
+          <Link href="https://github.com/sahabji0P" target="_blank" aria-label="GitHub">
+            <FaGithub size={24} className="social-icon" />
+          </Link>
+          <Link href="https://shashwatjain.me" target="_blank" aria-label="Portfolio">
+            <FaGlobe size={24} className="social-icon" />
+          </Link>
+        </div>
+
+        <p className="text-[var(--color-text-secondary)] mt-3">Made for better bill splitting</p>
+        <p className="text-sm font-bold text-[var(--color-text-secondary)] mt-2">SJ © {new Date().getFullYear()}</p>
+      </footer>
     </main>
   );
 }

@@ -5,34 +5,44 @@
 :root {
     --color-accent: #e53935;
     /* Red */
-    --color-accent-light: #ffebee;
-    /* Light red */
-    --color-bg: #fff;
-    /* White background */
-    --color-card: #fff;
-    --color-border: #e0d7ce;
-    --color-text: #222;
+    --color-accent-light: #ff6b65;
+    /* Lighter red */
+    --color-accent-dark: #b71c1c;
+    /* Darker red */
+    --color-bg: #121212;
+    /* Dark background */
+    --color-card: #1e1e1e;
+    /* Card background */
+    --color-border: #2c2c2c;
+    /* Dark border */
+    --color-text: #e0e0e0;
+    /* Light text (changed from black to light gray for better visibility) */
+    --color-text-secondary: #a0a0a0;
+    /* Secondary text (changed from white to light gray) */
+    --font-typewriter: 'Courier New', Courier, 'Lucida Console', 'Monaco', monospace;
 }
 
 body {
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    font-family: var(--font-typewriter);
 }
 
 input,
 button,
 textarea,
 select {
-    font-family: inherit;
+    font-family: var(--font-typewriter);
 }
 
 /* Card style */
 .card {
     background: var(--color-card);
     border-radius: 1.25rem;
-    box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
     border: 1px solid var(--color-border);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 /* Accent button */
@@ -46,12 +56,12 @@ select {
 }
 
 .btn-accent:hover {
-    background: #b71c1c;
+    background: var(--color-accent-dark);
 }
 
 /* Secondary button */
 .btn-secondary {
-    background: #fff;
+    background: transparent;
     color: var(--color-accent);
     border: 1.5px solid var(--color-accent);
     border-radius: 0.75rem;
@@ -61,7 +71,7 @@ select {
 }
 
 .btn-secondary:hover {
-    background: var(--color-accent-light);
+    background: rgba(229, 57, 53, 0.1);
 }
 
 /* Input style */
@@ -69,12 +79,81 @@ select {
     border: 1.5px solid var(--color-border);
     border-radius: 0.75rem;
     padding: 0.5rem 1rem;
-    background: #fff;
+    background: #262626;
+    color: var(--color-text);
     font-size: 1rem;
     transition: border 0.2s;
+    width: 100%;
 }
 
 .input:focus {
     border-color: var(--color-accent);
     outline: none;
+}
+
+/* Form input default styling */
+input,
+textarea,
+select {
+    color: var(--color-text);
+    background-color: #262626;
+}
+
+/* Text color classes for dark theme */
+.text-gray-800 {
+    color: var(--color-text) !important;
+}
+
+.text-gray-700 {
+    color: var(--color-text) !important;
+}
+
+.text-gray-500 {
+    color: #b0b0b0 !important;
+}
+
+/* Footer specific styles */
+.footer-divider {
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+    width: 80%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 1rem 0;
+}
+
+.social-icon {
+    color: var(--color-text-secondary);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.social-icon:hover {
+    color: var(--color-accent);
+    transform: translateY(-2px);
+}
+
+/* Container for page content */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+    .container {
+        padding: 0 1.5rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .container {
+        padding: 0 2rem;
+    }
 }
