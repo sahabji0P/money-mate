@@ -4,7 +4,14 @@ import BillSplitter from '@/components/BillSplitter';
 import ReceiptItemEditor from '@/components/ReceiptItemEditor';
 import ReceiptUpload from '@/components/ReceiptUpload';
 import { ReceiptItem } from '@/types/receipt';
+import Image from 'next/image';
 import { useState } from 'react';
+
+declare global {
+  interface Window {
+    lastUploadedImage: string;
+  }
+}
 
 const STEPS = [
   'Scan',
@@ -138,7 +145,7 @@ export default function Home() {
         {step === 1 && (
           <div>
             <ReceiptUpload
-              onReceiptAnalysis={(items) => handleUpload(items, (window as any).lastUploadedImage)}
+              onReceiptAnalysis={(items) => handleUpload(items, window.lastUploadedImage)}
               isLoading={isLoading}
               setIsLoading={setIsLoading}
               setError={setError}
@@ -165,12 +172,19 @@ export default function Home() {
             {imagePreview && (
               <div className="flex-1 flex flex-col items-center">
                 <div className="w-full max-w-xs rounded-xl overflow-hidden shadow-md border border-gray-200 bg-gray-50">
-                  <img src={imagePreview} alt="Receipt Preview" className="w-full object-contain" />
+                  <Image
+                    src={imagePreview}
+                    alt="Receipt Preview"
+                    width={400}
+                    height={600}
+                    className="w-full object-contain"
+                    style={{ height: 'auto' }}
+                  />
                 </div>
                 <button
                   onClick={handleReset}
                   className="mt-6 btn-secondary"
-                >ge
+                >
                   Upload New Bill
                 </button>
               </div>

@@ -2,6 +2,7 @@
 
 import { ReceiptItem } from '@/types/receipt';
 import { PhotoIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
@@ -11,6 +12,12 @@ interface ReceiptUploadProps {
     setIsLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
     setImagePreview?: (image: string) => void;
+}
+
+declare global {
+    interface Window {
+        lastUploadedImage: string;
+    }
 }
 
 export default function ReceiptUpload({
@@ -41,7 +48,7 @@ export default function ReceiptUpload({
                 if (setImagePreview) setImagePreview(base64Image);
 
                 // Store in window for later use
-                (window as any).lastUploadedImage = base64Image;
+                window.lastUploadedImage = base64Image;
 
                 // Call API to analyze receipt
                 try {
@@ -100,10 +107,13 @@ export default function ReceiptUpload({
                 </div>
             ) : (
                 <div className="w-full max-w-md rounded-xl overflow-hidden border border-gray-200 shadow-md flex flex-col items-center">
-                    <img
+                    <Image
                         src={localPreview}
                         alt="Receipt preview"
+                        width={400}
+                        height={600}
                         className="w-full h-auto object-contain max-h-[400px]"
+                        style={{ height: 'auto' }}
                     />
                     {isLoading && (
                         <div className="w-full bg-blue-500 text-white text-center py-2 animate-pulse">

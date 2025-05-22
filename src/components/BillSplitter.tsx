@@ -48,6 +48,10 @@ export default function BillSplitter({ items }: BillSplitterProps) {
     // Assign/unassign item to person
     const toggleItemAssignment = (itemId: string, personId: string) => {
         setSplittableItems(splittableItems.map(item => {
+            // Prevent manual assignment for Tip/Tax
+            if (item.id === itemId && (item.name.toLowerCase() === 'tip' || item.name.toLowerCase() === 'tax')) {
+                return { ...item, assignedTo: people.map(p => p.id) };
+            }
             if (item.id === itemId) {
                 const assignedTo = item.assignedTo.includes(personId)
                     ? item.assignedTo.filter(id => id !== personId)
@@ -66,14 +70,24 @@ export default function BillSplitter({ items }: BillSplitterProps) {
         })));
     };
 
+    // Ensure Tip/Tax are always assigned to all users
+    const normalizedItems = useMemo(() => {
+        return splittableItems.map(item => {
+            if (item.name.toLowerCase() === 'tip' || item.name.toLowerCase() === 'tax') {
+                return { ...item, assignedTo: people.map(p => p.id) };
+            }
+            return item;
+        });
+    }, [splittableItems, people]);
+
     // Per-person summary calculation
     const billSummary = useMemo(() => {
         const summary: BillSummary = {
-            total: splittableItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+            total: normalizedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
             perPerson: {},
         };
         people.forEach(person => {
-            const personItems = splittableItems.filter(item => item.assignedTo.includes(person.id));
+            const personItems = normalizedItems.filter(item => item.assignedTo.includes(person.id));
             const total = personItems.reduce((sum, item) => {
                 const share = (item.price * item.quantity) / item.assignedTo.length;
                 return sum + share;
@@ -90,7 +104,7 @@ export default function BillSplitter({ items }: BillSplitterProps) {
             };
         });
         return summary;
-    }, [splittableItems, people]);
+    }, [normalizedItems, people]);
 
     // Generate text summary
     const generateTextSummary = () => {
@@ -146,7 +160,7 @@ export default function BillSplitter({ items }: BillSplitterProps) {
         <div className="space-y-8">
             {/* Who's Splitting Section */}
             <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">Who's Splitting?</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-2">Who&apos;s Splitting?</h2>
                 <div className="flex flex-wrap gap-2 mb-3">
                     {people.map(person => (
                         <span key={person.id} className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium shadow-sm">

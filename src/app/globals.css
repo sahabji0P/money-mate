@@ -3,9 +3,12 @@
 @tailwind utilities;
 
 :root {
-    --color-accent: #d35400;
-    --color-accent-light: #fbeee6;
-    --color-bg: #f9f6f3;
+    --color-accent: #e53935;
+    /* Red */
+    --color-accent-light: #ffebee;
+    /* Light red */
+    --color-bg: #fff;
+    /* White background */
     --color-card: #fff;
     --color-border: #e0d7ce;
     --color-text: #222;
@@ -43,7 +46,7 @@ select {
 }
 
 .btn-accent:hover {
-    background: #b34700;
+    background: #b71c1c;
 }
 
 /* Secondary button */

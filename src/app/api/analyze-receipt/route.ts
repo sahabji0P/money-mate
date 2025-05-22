@@ -10,6 +10,14 @@ if (GEMINI_API_KEY) {
     genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 }
 
+interface ReceiptItemResponse {
+    id?: string;
+    name: string;
+    price: number | string;
+    quantity?: number;
+    assignedTo: string[];
+}
+
 async function analyzeReceiptWithGemini(base64Image: string): Promise<ReceiptItem[]> {
     // If no API key is set, return mock data
     if (!genAI) {
@@ -68,7 +76,7 @@ IMPORTANT INSTRUCTIONS:
             const data = JSON.parse(text);
             // Filter out common total/payment entries
             return data.items
-                .filter((item: any) => {
+                .filter((item: ReceiptItemResponse) => {
                     const name = item.name.toLowerCase();
                     return !(
                         name.includes('total') ||
@@ -78,21 +86,21 @@ IMPORTANT INSTRUCTIONS:
                         name.includes('payment')
                     );
                 })
-                .map((item: any, index: number) => ({
+                .map((item: ReceiptItemResponse, index: number) => ({
                     id: item.id || `item-${index + 1}`,
                     name: item.name,
                     price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
                     quantity: item.quantity || 1, // Default to 1 if not provided
                     assignedTo: [],
                 }));
-        } catch (e) {
+        } catch {
             // If the response isn't valid JSON, try to extract JSON from it
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const data = JSON.parse(jsonMatch[0]);
                 // Filter out common total/payment entries
                 return data.items
-                    .filter((item: any) => {
+                    .filter((item: ReceiptItemResponse) => {
                         const name = item.name.toLowerCase();
                         return !(
                             name.includes('total') ||
@@ -102,7 +110,7 @@ IMPORTANT INSTRUCTIONS:
                             name.includes('payment')
                         );
                     })
-                    .map((item: any, index: number) => ({
+                    .map((item: ReceiptItemResponse, index: number) => ({
                         id: item.id || `item-${index + 1}`,
                         name: item.name,
                         price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
