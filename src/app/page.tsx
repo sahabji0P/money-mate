@@ -17,11 +17,6 @@ declare global {
   }
 }
 
-const STEPS = [
-  'Scan',
-  'Review Items',
-  'Split',
-];
 
 export default function Home() {
   // Steps: 0=landing, 1=scan, 2=review items, 3=split
@@ -61,47 +56,6 @@ export default function Home() {
     setError(null);
     setStep(0);
   };
-
-  // Stepper UI
-  const Stepper = () => (
-    <div className="flex items-center justify-center w-full mb-10">
-      {STEPS.map((label, idx) => {
-        // Map step state (0-3) to indices (0-2)
-        const stepIndex = idx + 1; // Step indices are 1, 2, 3 in the UI
-        const isActive = step === stepIndex;
-        const isCompleted = step > stepIndex;
-
-        return (
-          <div key={label} className="flex flex-col items-center relative">
-            {/* Line before */}
-            {idx > 0 && (
-              <div className={`absolute right-full top-5 w-full h-1 -translate-y-1/2 ${isCompleted ? 'bg-[var(--color-accent)]' : 'bg-gray-300'}`}
-                style={{ width: '100%', right: '50%' }}></div>
-            )}
-
-            {/* Circle */}
-            <div
-              className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-white text-lg mb-2 z-10 transition-all
-                ${isActive || isCompleted ? 'bg-[var(--color-accent)]' : 'bg-gray-300'}`}
-            >
-              {stepIndex}
-            </div>
-
-            {/* Label */}
-            <span className={`font-medium text-sm ${isActive ? 'text-[var(--color-accent)]' : 'text-gray-500'}`}>
-              {label}
-            </span>
-
-            {/* Line after */}
-            {idx < STEPS.length - 1 && (
-              <div className={`absolute left-1/2 top-5 w-full h-1 -translate-y-1/2 ${isCompleted ? 'bg-[var(--color-accent)]' : 'bg-gray-300'}`}
-                style={{ width: '100%' }}></div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
 
   return (
     <main className="min-h-screen flex flex-col items-center py-8 bg-[var(--color-bg)]">
