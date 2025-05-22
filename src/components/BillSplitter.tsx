@@ -8,21 +8,19 @@ interface BillSplitterProps {
     items: ReceiptItem[];
 }
 
-interface EditableItem extends ReceiptItem {
-    quantity: number;
-}
-
 export default function BillSplitter({ items }: BillSplitterProps) {
     const [people, setPeople] = useState<Person[]>([
         { id: '1', name: 'You' },
     ]);
     const [newPersonName, setNewPersonName] = useState('');
-    const [editableItems, setEditableItems] = useState<EditableItem[]>(
-        items.map(item => ({ ...item, quantity: 1 }))
-    );
     const [tip, setTip] = useState(0);
     const [tax, setTax] = useState(0);
     const [copied, setCopied] = useState(false);
+
+    // Make a local copy of items to manage assignment
+    const [splittableItems, setSplittableItems] = useState<ReceiptItem[]>(
+        items.map(item => ({ ...item }))
+    );
 
     // Add person
     const addPerson = () => {
@@ -40,22 +38,15 @@ export default function BillSplitter({ items }: BillSplitterProps) {
     // Remove person
     const removePerson = (id: string) => {
         setPeople(people.filter(person => person.id !== id));
-        setEditableItems(editableItems.map(item => ({
+        setSplittableItems(splittableItems.map(item => ({
             ...item,
             assignedTo: item.assignedTo.filter(pid => pid !== id),
         })));
     };
 
-    // Edit item fields
-    const editItem = (id: string, field: 'name' | 'price' | 'quantity', value: string | number) => {
-        setEditableItems(editableItems.map(item =>
-            item.id === id ? { ...item, [field]: field === 'quantity' ? Math.max(1, Number(value)) : value } : item
-        ));
-    };
-
     // Assign/unassign item to person
     const toggleItemAssignment = (itemId: string, personId: string) => {
-        setEditableItems(editableItems.map(item => {
+        setSplittableItems(splittableItems.map(item => {
             if (item.id === itemId) {
                 const assignedTo = item.assignedTo.includes(personId)
                     ? item.assignedTo.filter(id => id !== personId)
@@ -68,7 +59,7 @@ export default function BillSplitter({ items }: BillSplitterProps) {
 
     // Split evenly
     const splitEvenly = () => {
-        setEditableItems(editableItems.map(item => ({
+        setSplittableItems(splittableItems.map(item => ({
             ...item,
             assignedTo: people.map(p => p.id),
         })));
@@ -76,22 +67,22 @@ export default function BillSplitter({ items }: BillSplitterProps) {
 
     // Add tip/tax as pseudo-items for summary
     const allItemsWithExtras = useMemo(() => {
-        let arr = [...editableItems];
-        if (tip > 0) arr.push({ id: 'tip', name: 'Tip', price: tip, assignedTo: people.map(p => p.id), quantity: 1 });
-        if (tax > 0) arr.push({ id: 'tax', name: 'Tax', price: tax, assignedTo: people.map(p => p.id), quantity: 1 });
+        let arr = [...splittableItems];
+        if (tip > 0) arr.push({ id: 'tip', name: 'Tip', price: tip, assignedTo: people.map(p => p.id) });
+        if (tax > 0) arr.push({ id: 'tax', name: 'Tax', price: tax, assignedTo: people.map(p => p.id) });
         return arr;
-    }, [editableItems, tip, tax, people]);
+    }, [splittableItems, tip, tax, people]);
 
     // Per-person summary calculation
     const billSummary = useMemo(() => {
         const summary: BillSummary = {
-            total: allItemsWithExtras.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0),
+            total: allItemsWithExtras.reduce((sum, item) => sum + item.price, 0),
             perPerson: {},
         };
         people.forEach(person => {
             const personItems = allItemsWithExtras.filter(item => item.assignedTo.includes(person.id));
             const total = personItems.reduce((sum, item) => {
-                const share = (item.price * (item.quantity || 1)) / item.assignedTo.length;
+                const share = item.price / item.assignedTo.length;
                 return sum + share;
             }, 0);
             summary.perPerson[person.id] = {
@@ -99,8 +90,8 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                 items: personItems.map(item => ({
                     id: item.id,
                     name: item.name,
-                    price: item.price * (item.quantity || 1),
-                    share: (item.price * (item.quantity || 1)) / item.assignedTo.length,
+                    price: item.price,
+                    share: item.price / item.assignedTo.length,
                 })),
             };
         });
@@ -163,34 +154,16 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                     </button>
                 </div>
             </div>
-            {/* Editable Items List */}
+
+            {/* Assign Items Section */}
             <div>
                 <h2 className="text-lg font-semibold text-gray-800 mb-2">Assign Items</h2>
                 <div className="grid gap-4">
-                    {editableItems.map((item) => (
+                    {splittableItems.map((item) => (
                         <div key={item.id} className="rounded-xl bg-white shadow-sm border border-gray-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between transition-all">
                             <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 flex-1">
-                                <input
-                                    type="text"
-                                    value={item.name}
-                                    onChange={e => editItem(item.id, 'name', e.target.value)}
-                                    className="rounded-md border border-gray-300 px-2 py-1 w-32 md:w-40 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step={0.01}
-                                    value={item.price}
-                                    onChange={e => editItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                                    className="rounded-md border border-gray-300 px-2 py-1 w-20 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={item.quantity}
-                                    onChange={e => editItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                                    className="rounded-md border border-gray-300 px-2 py-1 w-16 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
+                                <span className="font-medium text-gray-900">{item.name}</span>
+                                <span className="text-gray-700">${item.price.toFixed(2)}</span>
                             </div>
                             <div className="flex gap-2 mt-2 md:mt-0 flex-wrap">
                                 {people.map((person) => (
@@ -210,6 +183,7 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                     ))}
                 </div>
             </div>
+
             {/* Tip/Tax Fields */}
             <div className="flex gap-4 items-center">
                 <div className="flex flex-col">
@@ -235,6 +209,7 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                     />
                 </div>
             </div>
+
             {/* Per-Person Summary */}
             <div className="grid md:grid-cols-2 gap-6">
                 {people.map((person) => (
@@ -257,6 +232,7 @@ export default function BillSplitter({ items }: BillSplitterProps) {
                     </div>
                 ))}
             </div>
+
             {/* Share Button */}
             <div className="flex justify-end">
                 <button

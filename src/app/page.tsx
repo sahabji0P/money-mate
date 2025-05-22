@@ -1,30 +1,34 @@
 'use client';
 
 import BillSplitter from '@/components/BillSplitter';
+import ReceiptItemEditor from '@/components/ReceiptItemEditor';
 import ReceiptUpload from '@/components/ReceiptUpload';
 import { ReceiptItem } from '@/types/receipt';
 import { useState } from 'react';
 
 const STEPS = [
   'Scan',
-  'Assign',
+  'Review Items',
   'Split',
 ];
 
 export default function Home() {
-  // First step is 0 (landing), then 1-3 correspond to steps array indices 0-2
+  // Steps: 0=landing, 1=scan, 2=review items, 3=split
   const [step, setStep] = useState(0);
   const [receiptItems, setReceiptItems] = useState<ReceiptItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // For tip/tax, can add state here later
-
   const handleUpload = (items: ReceiptItem[], image: string) => {
     setReceiptItems(items);
     setImagePreview(image);
-    setStep(2); // Go to assign step
+    setStep(2); // Go to review items step
+  };
+
+  const handleItemsFinalized = (finalizedItems: ReceiptItem[]) => {
+    setReceiptItems(finalizedItems);
+    setStep(3); // Go to split step
   };
 
   const handleReset = () => {
@@ -140,7 +144,8 @@ export default function Home() {
             </button>
           </div>
         )}
-        {/* Step 2: Assign Items (and preview) */}
+
+        {/* Step 2: Review and Finalize Items */}
         {step === 2 && (
           <div className="flex flex-col md:flex-row gap-8">
             {/* Left: Image Preview */}
@@ -152,18 +157,37 @@ export default function Home() {
               )}
               <button
                 onClick={handleReset}
-                className="mt-6 btn-accent"
+                className="mt-6 btn-secondary"
               >
                 Upload New Bill
               </button>
             </div>
-            {/* Right: Bill Splitter */}
+            {/* Right: Item Editor */}
             <div className="flex-1">
-              <BillSplitter items={receiptItems} />
+              <ReceiptItemEditor
+                items={receiptItems}
+                onItemsFinalized={handleItemsFinalized}
+              />
             </div>
           </div>
         )}
-        {/* Step 3: Summary (to be implemented) */}
+
+        {/* Step 3: Assign and Split */}
+        {step === 3 && (
+          <div className="flex flex-col gap-8">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">Split Your Bill</h2>
+              <button
+                onClick={() => setStep(2)}
+                className="btn-secondary text-sm px-4 py-2"
+              >
+                Edit Items
+              </button>
+            </div>
+
+            <BillSplitter items={receiptItems} />
+          </div>
+        )}
       </div>
     </main>
   );

@@ -41,13 +41,12 @@ Return a single JSON object with the following structure:
 }
 
 IMPORTANT INSTRUCTIONS:
-1. Extract ALL items and their prices from the receipt
-2. Keep item names exactly as they appear on the receipt
-3. Convert prices to numbers (remove currency symbols)
-4. Ensure the JSON is valid and follows the exact structure shown above
-5. Include all items, even if they seem insignificant
-6. If an item has a quantity, multiply the price by the quantity
-7. If there are any discounts or taxes, include them as separate items`;
+1. Extract ONLY actual products/items and their prices from the receipt
+2. DO NOT include TOTAL, SUBTOTAL, CASH, PAYMENT, or CHANGE entries
+3. Keep item names exactly as they appear on the receipt
+4. Convert prices to numbers (remove currency symbols)
+5. Ensure the JSON is valid and follows the exact structure shown above
+6. If an item has a quantity, multiply the price by the quantity`;
 
         const parts = [
             { text: prompt },
@@ -66,23 +65,51 @@ IMPORTANT INSTRUCTIONS:
         // Validate that the response is valid JSON
         try {
             const data = JSON.parse(text);
-            return data.items.map((item: any, index: number) => ({
-                id: item.id || `item-${index + 1}`,
-                name: item.name,
-                price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-                assignedTo: [],
-            }));
-        } catch (e) {
-            // If the response isn't valid JSON, try to extract JSON from it
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const data = JSON.parse(jsonMatch[0]);
-                return data.items.map((item: any, index: number) => ({
+            // Filter out common total/payment entries
+            return data.items
+                .filter((item: any) => {
+                    const name = item.name.toLowerCase();
+                    return !(
+                        name.includes('total') ||
+                        name.includes('subtotal') ||
+                        name.includes('cash') ||
+                        name.includes('change') ||
+                        name.includes('payment') ||
+                        name.includes('tax') ||
+                        name.includes('tip')
+                    );
+                })
+                .map((item: any, index: number) => ({
                     id: item.id || `item-${index + 1}`,
                     name: item.name,
                     price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
                     assignedTo: [],
                 }));
+        } catch (e) {
+            // If the response isn't valid JSON, try to extract JSON from it
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const data = JSON.parse(jsonMatch[0]);
+                // Filter out common total/payment entries
+                return data.items
+                    .filter((item: any) => {
+                        const name = item.name.toLowerCase();
+                        return !(
+                            name.includes('total') ||
+                            name.includes('subtotal') ||
+                            name.includes('cash') ||
+                            name.includes('change') ||
+                            name.includes('payment') ||
+                            name.includes('tax') ||
+                            name.includes('tip')
+                        );
+                    })
+                    .map((item: any, index: number) => ({
+                        id: item.id || `item-${index + 1}`,
+                        name: item.name,
+                        price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+                        assignedTo: [],
+                    }));
             }
             throw new Error('Failed to get valid JSON response from Gemini');
         }
