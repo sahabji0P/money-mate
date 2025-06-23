@@ -206,8 +206,8 @@ export default function Home() {
           </Link>
         </div>
 
-        <p className="text-[var(--color-text-secondary)] mt-3">Made for better bill splitting</p>
-        <p className="text-sm font-bold text-[var(--color-text-secondary)] mt-2">SJ © {new Date().getFullYear()}</p>
+        <p className="text-[var(--color-text-secondary)] mt-3">Made for better bill splitting not relationships!</p>
+        <p className="text-sm font-bold text-[var(--color-text-secondary)] mt-2">© <span className="text-[var(--color-accent)]">SJ </span>  Powered by <span className="text-[var(--color-accent)]"> Web Landers</span> {new Date().getFullYear()}</p>
       </footer>
     </main>
   );
