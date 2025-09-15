@@ -11,27 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-        HOST: "68.210.184.192"
-        USERNAME: "azureuser"
+      HOST: "68.210.184.192"
+      USERNAME: "azureuser"
     
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
 
-      - name: Setup SSH Key
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 400 ~/.ssh/id_rsa
-
-      - name: Add to Azure hosts
-        run: |
-            ssh-keyscan -H $HOST >> ~/.ssh/known_hosts     
-
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_rsa
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy to Azure VM
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $USERNAME@$HOST << EOF
+          ssh -i ~/.ssh/id_rsa $USERNAME@$HOST << 'EOF'
             cd /home/azureuser/money-mate &&
             echo '🚀 Starting deployment...' &&
             git pull origin master &&
@@ -42,4 +39,4 @@ jobs:
             echo '♻️ Restarting application...' &&
             pm2 restart all || pm2 start npm --name 'money-mate' -- start &&
             echo '✅ Deployment completed successfully!'
-          "
+          EOF
