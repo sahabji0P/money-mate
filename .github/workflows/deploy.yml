@@ -28,8 +28,8 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
         run: |
-          ssh -o StrictHostKeyChecking=yes $SERVER_USER@$SERVER_IP "echo 'SSH connection successful'"
-        # Test the SSH connection first
+          ssh -v -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts $SERVER_USER@$SERVER_IP "echo 'SSH connection successful'"
+        # Test the SSH connection first with verbose output
 
       - name: Deploy Application
         env:
