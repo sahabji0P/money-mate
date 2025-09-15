@@ -1,45 +1,56 @@
-name: Deploy Next.js to Azure VM
+name: CI/CD Deploy to Server
 
-on: 
+on:
   push:
     branches:
-      - master
-  workflow_dispatch: 
+      - master   # Triggers workflow on push to master branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      HOST: "68.210.184.192"
-      USERNAME: "azureuser"
-    
     steps:
-      - name: Checkout the code
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4  # Updated to latest version
+        # Pulls your repo code into the GitHub runner
 
-      - name: Setup SSH Key
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
-      - name: Add to known hosts
-        run: |
-          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
+        # Manually set up SSH key with proper permissions
 
-      - name: Deploy to Azure VM
+      - name: Test SSH Connection
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
         run: |
-          ssh -i ~/.ssh/id_rsa $USERNAME@$HOST << 'EOF'
-            cd /home/azureuser/money-mate &&
-            echo '🚀 Starting deployment...' &&
+          ssh -o StrictHostKeyChecking=yes $SERVER_USER@$SERVER_IP "echo 'SSH connection successful'"
+        # Test the SSH connection first
+
+      - name: Deploy Application
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          APP_DIR: ${{ secrets.APP_DIR }}
+        run: |
+          ssh -o StrictHostKeyChecking=yes $SERVER_USER@$SERVER_IP "
+            cd $APP_DIR &&
+            echo 'Pulling latest changes...' &&
             git pull origin master &&
-            echo '📦 Installing dependencies...' &&
+            echo 'Installing dependencies...' &&
             npm install &&
-            echo '🔨 Building application...' &&
+            echo 'Building application...' &&
             npm run build &&
-            echo '♻️ Restarting application...' &&
-            pm2 restart all || pm2 start npm --name 'money-mate' -- start &&
-            echo '✅ Deployment completed successfully!'
-          EOF
+            echo 'Deployment completed successfully!'
+          "
+        # Connects to the server and runs deployment commands with better error handling
+
+      - name: Cleanup SSH
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa
+        # Clean up SSH key for security
