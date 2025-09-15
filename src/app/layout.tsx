@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MoneyMate - Split Bills, Not Friendships",
   description: "A simple way to split bills with friends without the hassle",
+
+  icons: {
+    icon: "/favicon.jpeg",
+    shortcut: "/favicon.jpeg",
+    apple: "/favicon.jpeg",
+  },
 };
 
 export default function RootLayout({
