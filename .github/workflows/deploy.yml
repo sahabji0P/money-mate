@@ -9,24 +9,30 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    env:
+        HOST: "68.210.184.192"
+        USERNAME: "azureuser"
     
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
-        with: 
-          fetch-depth: 0
-      
-      - name: Install SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with: 
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          if_key_exists: replace
-          
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+
+      - name: Add to Azure hosts
+        run: |
+            ssh-keyscan -H $HOST >> ~/.ssh/known_hosts     
+
+
       - name: Deploy to Azure VM
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
-            cd ${{ secrets.APP_DIR }} &&
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $USERNAME@$HOST << EOF
+            cd /home/azureuser/money-mate &&
             echo '🚀 Starting deployment...' &&
             git pull origin master &&
             echo '📦 Installing dependencies...' &&
