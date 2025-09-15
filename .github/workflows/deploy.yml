@@ -19,6 +19,7 @@ jobs:
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           name: id_rsa               # Default name is id_rsa; you can omit
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
           if_key_exists: replace     # Overwrites if already present
         # Installs SSH key and registers known_hosts for strict SSH
 
