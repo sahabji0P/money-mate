@@ -1,0 +1,35 @@
+name: CI/CD Deploy to Server
+
+on:
+  push:
+    branches:
+      - master   # <--- triggers workflow on push to master branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        # Pulls the latest code onto GitHub's runner
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        # Loads your SSH key as an agent, so ssh/scp commands can use it securely
+
+      - name: Add server to known_hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+        # Ensures SSH trusts your server and doesn't prompt for fingerprint approval
+
+      - name: Deploy Application
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          APP_DIR: ${{ secrets.APP_DIR }}
+        run: |
+          ssh $SERVER_USER@$SERVER_IP "cd $APP_DIR && git pull origin master && npm install && npm run build"
+        # SSHs into the server, updates code from the master branch, installs dependencies, rebuilds app
