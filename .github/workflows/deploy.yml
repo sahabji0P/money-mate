@@ -1,9 +1,10 @@
+# CI/CD Workflow for Deploying to Azure VM
 name: CI/CD Deploy to Server
 
 on:
   push:
     branches:
-      - master   # <--- triggers workflow on push to master branch
+      - master  # Triggers workflow on push to the master branch
 
 jobs:
   deploy:
@@ -12,24 +13,61 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        # Pulls the latest code onto GitHub's runner
+        # Pulls the latest code onto the GitHub runner
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        # Loads your SSH key as an agent, so ssh/scp commands can use it securely
+        # Loads your private SSH key into the SSH agent for authentication
 
       - name: Add server to known_hosts
         run: |
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-        # Ensures SSH trusts your server and doesn't prompt for fingerprint approval
+        # Adds the server's host key to the runner's known_hosts to prevent interactive prompts
 
-      - name: Deploy Application
+      - name: Deploy Application with Zero Downtime 🚀
         env:
+          # Using your existing secret names
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
-          APP_DIR: ${{ secrets.APP_DIR }}
+          APP_DIR: ${{ secrets.APP_DIR }} # Example: /home/azureuser/my-next-app
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }} # Automatically gets your repo URL
         run: |
-          ssh $SERVER_USER@$SERVER_IP "cd $APP_DIR && git pull origin master && npm install && npm run build"
-        # SSHs into the server, updates code from the master branch, installs dependencies, rebuilds app
+          ssh -A $SERVER_USER@$SERVER_IP '
+            set -e # Exit immediately if any command fails
+
+            # --- 1. Define Directories ---
+            # This uses your APP_DIR secret as the base path for deployments.
+            RELEASES_DIR="${APP_DIR}/releases"
+            RELEASE_NAME=$(date +"%Y%m%d%H%M%S")
+            NEW_RELEASE_DIR="${RELEASES_DIR}/${RELEASE_NAME}"
+            
+            # --- 2. Create New Release ---
+            echo "Cloning repository into new release directory..."
+            # The --depth=1 flag does a shallow clone, which is faster.
+            git clone --depth=1 --branch=master ${{ env.REPO_URL }} "$NEW_RELEASE_DIR"
+            
+            # --- 3. Install Dependencies and Build Project ---
+            echo "Installing dependencies and building project..."
+            cd "$NEW_RELEASE_DIR"
+            npm install
+            npm run build
+            
+            # --- 4. Atomically Switch to New Release ---
+            # This is the magic step. It instantly switches the live code to the new version.
+            echo "Activating new release..."
+            ln -sfn "$NEW_RELEASE_DIR" "${APP_DIR}/current"
+            
+            # --- 5. Restart Application using PM2 ---
+            # This reloads your app with zero downtime. Assumes you have an ecosystem.config.js file.
+            echo "Reloading application via PM2..."
+            cd "${APP_DIR}/current" && pm2 reload ecosystem.config.js --env production
+            
+            # --- 6. Clean Up Old Releases ---
+            # This keeps the last 5 releases and removes older ones to save space.
+            echo "Cleaning up old releases..."
+            ls -dt ${RELEASES_DIR}/* | tail -n +6 | xargs -r rm -rf
+            
+            echo "✅ Deployment successful!"
+          '
