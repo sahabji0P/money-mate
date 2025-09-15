@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-        HOST: "68.210.184.192"
-        USERNAME: "azureuser"
+      HOST: "68.210.184.192"
+      USERNAME: "azureuser"
     
     steps:
       - name: Checkout the code
@@ -26,8 +26,7 @@ jobs:
 
       - name: Add to Azure hosts
         run: |
-            ssh-keyscan -H $HOST >> ~/.ssh/known_hosts     
-
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts     
 
       - name: Deploy to Azure VM
         run: |
@@ -42,4 +41,4 @@ jobs:
             echo '♻️ Restarting application...' &&
             pm2 restart all || pm2 start npm --name 'money-mate' -- start &&
             echo '✅ Deployment completed successfully!'
-          "
+          EOF
