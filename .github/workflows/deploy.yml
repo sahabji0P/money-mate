@@ -15,7 +15,7 @@ jobs:
         # Pulls the latest code onto GitHub's runner
 
       - name: Setup SSH
-        uses: shimataro/ssh-key-action@v2
+        uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
         # Loads your SSH key as an agent, so ssh/scp commands can use it securely
