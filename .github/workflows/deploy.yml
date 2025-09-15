@@ -1,56 +1,29 @@
-name: CI/CD Deploy to Server
+name: Deploy to Azure VM
 
 on:
   push:
     branches:
-      - master   # Triggers workflow on push to master branch
+      - master
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4  # Updated to latest version
-        # Pulls your repo code into the GitHub runner
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_rsa
           chmod 644 ~/.ssh/known_hosts
-        # Manually set up SSH key with proper permissions
 
-      - name: Test SSH Connection
-        env:
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_IP: ${{ secrets.SERVER_IP }}
+      - name: Deploy to Server
         run: |
-          ssh -v -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts $SERVER_USER@$SERVER_IP "echo 'SSH connection successful'"
-        # Test the SSH connection first with verbose output
-
-      - name: Deploy Application
-        env:
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_IP: ${{ secrets.SERVER_IP }}
-          APP_DIR: ${{ secrets.APP_DIR }}
-        run: |
-          ssh -o StrictHostKeyChecking=yes $SERVER_USER@$SERVER_IP "
-            cd $APP_DIR &&
-            echo 'Pulling latest changes...' &&
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+            cd ${{ secrets.APP_DIR }} &&
             git pull origin master &&
-            echo 'Installing dependencies...' &&
             npm install &&
-            echo 'Building application...' &&
             npm run build &&
-            echo 'Deployment completed successfully!'
+            pm2 restart all || pm2 start npm --name 'nextjs-app' -- start
           "
-        # Connects to the server and runs deployment commands with better error handling
-
-      - name: Cleanup SSH
-        if: always()
-        run: |
-          rm -f ~/.ssh/id_rsa
-        # Clean up SSH key for security
