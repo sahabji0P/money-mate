@@ -18,12 +18,15 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_rsa
+
+      - name: Add to known hosts
+        run: |
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy to Azure VM
