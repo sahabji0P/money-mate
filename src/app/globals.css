@@ -19,20 +19,20 @@
     /* Light text (changed from black to light gray for better visibility) */
     --color-text-secondary: #a0a0a0;
     /* Secondary text (changed from white to light gray) */
-    --font-typewriter: 'Courier New', Courier, 'Lucida Console', 'Monaco', monospace;
+    --font-cascadia: var(--font-cascadia-code), 'Cascadia Code PL', 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
 body {
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-typewriter);
+    font-family: var(--font-cascadia);
 }
 
 input,
 button,
 textarea,
 select {
-    font-family: var(--font-typewriter);
+    font-family: var(--font-cascadia);
 }
 
 /* Card style */

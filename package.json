@@ -12,6 +12,7 @@
     "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
+    "@hookform/resolvers": "^5.2.1",
     "clsx": "^2.1.1",
     "gsap": "^3.13.0",
     "html2canvas": "^1.4.1",
@@ -19,8 +20,10 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
+    "react-hook-form": "^7.62.0",
     "react-icons": "^5.5.0",
-    "tailwind-merge": "^3.3.0"
+    "tailwind-merge": "^3.3.0",
+    "zod": "^4.1.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
