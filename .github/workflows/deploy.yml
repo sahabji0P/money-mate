@@ -11,22 +11,25 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4  # Updated to latest version
         # Pulls your repo code into the GitHub runner
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          name: id_rsa               # Default name is id_rsa; you can omit
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          if_key_exists: replace     # Overwrites if already present
-        # Installs SSH key and registers known_hosts for strict SSH
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+        # Manually set up SSH key with proper permissions
 
-      # If you don’t want to use a known_hosts secret, you can dynamically set it:
-      - name: Add server to known_hosts
-        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-        # This step can be omitted if you provided known_hosts in the install SSH key step
+      - name: Test SSH Connection
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+        run: |
+          ssh -o StrictHostKeyChecking=yes $SERVER_USER@$SERVER_IP "echo 'SSH connection successful'"
+        # Test the SSH connection first
 
       - name: Deploy Application
         env:
@@ -34,5 +37,20 @@ jobs:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           APP_DIR: ${{ secrets.APP_DIR }}
         run: |
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "cd $APP_DIR && git pull origin master && npm install && npm run build"
-        # Connects to the server and runs your deployment commands
+          ssh -o StrictHostKeyChecking=yes $SERVER_USER@$SERVER_IP "
+            cd $APP_DIR &&
+            echo 'Pulling latest changes...' &&
+            git pull origin master &&
+            echo 'Installing dependencies...' &&
+            npm install &&
+            echo 'Building application...' &&
+            npm run build &&
+            echo 'Deployment completed successfully!'
+          "
+        # Connects to the server and runs deployment commands with better error handling
+
+      - name: Cleanup SSH
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa
+        # Clean up SSH key for security
