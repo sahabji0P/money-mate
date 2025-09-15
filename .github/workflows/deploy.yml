@@ -1,29 +1,39 @@
-name: Deploy to Azure VM
+name: Deploy Next.js to Azure VM
 
-on:
+on: 
   push:
     branches:
       - master
+  workflow_dispatch: 
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Setup SSH
+      - name: Checkout the code
+        uses: actions/checkout@v4
+        with: 
+          fetch-depth: 0
+      
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with: 
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          if_key_exists: replace
+          
+      - name: Deploy to Azure VM
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/id_rsa
-          chmod 644 ~/.ssh/known_hosts
-
-      - name: Deploy to Server
-        run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             cd ${{ secrets.APP_DIR }} &&
+            echo '🚀 Starting deployment...' &&
             git pull origin master &&
+            echo '📦 Installing dependencies...' &&
             npm install &&
+            echo '🔨 Building application...' &&
             npm run build &&
-            pm2 restart all || pm2 start npm --name 'nextjs-app' -- start
+            echo '♻️ Restarting application...' &&
+            pm2 restart all || pm2 start npm --name 'money-mate' -- start &&
+            echo '✅ Deployment completed successfully!'
           "
