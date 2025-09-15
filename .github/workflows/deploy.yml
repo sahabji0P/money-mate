@@ -3,7 +3,7 @@ name: CI/CD Deploy to Server
 on:
   push:
     branches:
-      - master   # <--- triggers workflow on push to master branch
+      - master   # Triggers workflow on push to master branch
 
 jobs:
   deploy:
@@ -12,18 +12,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        # Pulls the latest code onto GitHub's runner
+        # Pulls your repo code into the GitHub runner
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        # Loads your SSH key as an agent, so ssh/scp commands can use it securely
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          name: id_rsa               # Default name is id_rsa; you can omit
+          if_key_exists: replace     # Overwrites if already present
+        # Installs SSH key and registers known_hosts for strict SSH
 
+      # If you don’t want to use a known_hosts secret, you can dynamically set it:
       - name: Add server to known_hosts
-        run: |
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-        # Ensures SSH trusts your server and doesn't prompt for fingerprint approval
+        run: ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+        # This step can be omitted if you provided known_hosts in the install SSH key step
 
       - name: Deploy Application
         env:
@@ -31,5 +33,5 @@ jobs:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           APP_DIR: ${{ secrets.APP_DIR }}
         run: |
-          ssh $SERVER_USER@$SERVER_IP "cd $APP_DIR && git pull origin master && npm install && npm run build"
-        # SSHs into the server, updates code from the master branch, installs dependencies, rebuilds app
+          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "cd $APP_DIR && git pull origin master && npm install && npm run build"
+        # Connects to the server and runs your deployment commands
