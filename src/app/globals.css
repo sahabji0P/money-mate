@@ -3,11 +3,17 @@
 @tailwind utilities;
 
 :root {
-  /* Owwn-inspired color scheme */
+  /* Owwn exact color palette */
   --color-teal: #10B981;
   --color-teal-dark: #059669;
+  --color-teal-medium: #34D399;
+  --color-blue-teal: #101418;
   --color-blue-dark: #111827;
   --color-navy: #0A0F12;
+  --color-purple-blue: #0F172A;
+  --color-purple-dark: #0F172A;
+
+  /* Legacy support */
   --color-text: #ffffff;
   --color-text-secondary: #9ca3af;
   --color-accent: #10B981;
@@ -15,8 +21,20 @@
   --color-bg: #0A0F12;
   --color-card: #111827;
   --color-border: #1f2937;
-  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
+
+/* Safe area insets for mobile notches */
+.pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+.pl-safe { padding-left: max(env(safe-area-inset-left), 0px); }
+.pr-safe { padding-right: max(env(safe-area-inset-right), 0px); }
+.px-safe {
+  padding-left: max(env(safe-area-inset-left), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+.b-safe-4 { bottom: max(env(safe-area-inset-bottom), 1rem); }
+.r-safe-4 { right: max(env(safe-area-inset-right), 1rem); }
+.l-safe-4 { left: max(env(safe-area-inset-left), 1rem); }
 
 * {
   margin: 0;
@@ -24,15 +42,68 @@
   box-sizing: border-box;
 }
 
-body {
-  font-family: var(--font-inter);
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--color-bg);
   color: var(--color-text);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  touch-action: manipulation;
+}
+
+.using-mouse * {
+  outline: none !important;
+}
+
+/* Audiowide font for branding */
+.font-audiowide {
+  font-family: 'Audiowide', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+}
+
+/* Blob animation for landing page */
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }
 
 /* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(75, 85, 99);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(107, 114, 128);
+}
+
+/* Global scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -108,7 +179,7 @@ body {
   outline: none;
 }
 
-/* Animations */
+/* Shimmer animation for loading states */
 @keyframes shimmer {
   0% {
     background-position: -1000px 0;
@@ -130,7 +201,17 @@ body {
   border-radius: 8px;
 }
 
-/* Footer specific styles */
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Footer styles */
 .footer-divider {
   height: 4px;
   background: linear-gradient(90deg, transparent, var(--color-accent), transparent);

@@ -1,0 +1,35 @@
+owwn-analysis/
+│
+├── 📄 README.md                                  (292 lines) - Quick reference guide
+├── 📄 COMPLETE_ANALYSIS.md                       (1318 lines) - Comprehensive analysis
+│
+├── 🛤️ ROUTES (Complete Source Code)
+│   ├── root-route-COMPLETE.tsx                  (125 lines) - Root layout
+│   ├── index-route-COMPLETE.tsx                 (543 lines) - Landing + Dashboard
+│   ├── new-group-route-COMPLETE.tsx             (158 lines) - Create group
+│   ├── groupId-route-COMPLETE.tsx               (2286 lines) ⭐ MAIN FILE
+│   ├── expense-detail-route-COMPLETE.tsx        (134 lines) - Expense detail
+│   └── settings-route-COMPLETE.tsx              (268 lines) - API key management
+│
+├── 🧩 COMPONENTS
+│   ├── GroupBottomNav.tsx                       (116 lines) - Mobile bottom nav
+│   └── ui/
+│       ├── drawer.tsx                           (133 lines) - Vaul drawer
+│       ├── checkbox.tsx                         (30 lines) - Radix checkbox
+│       ├── radio-group.tsx                      (43 lines) - Radix radio
+│       ├── dialog.tsx                           (143 lines) - Radix dialog
+│       ├── popover.tsx                          (46 lines) - Radix popover
+│       └── command.tsx                          (182 lines) - cmdk wrapper
+│
+├── 📚 LIB
+│   ├── utils.ts                                 (6 lines) - cn() utility
+│   ├── auth-context.tsx                         (22 lines) - Auth hook
+│   └── view-transitions.ts                      (19 lines) - View transitions
+│
+├── 🎨 STYLES
+│   └── app.css                                  (296 lines) - Global styles
+│
+└── ⚙️ CONFIG
+    └── router.tsx                               (45 lines) - Router setup
+
+TOTAL: 21 files, 6,293 lines of code + documentation
