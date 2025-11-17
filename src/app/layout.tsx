@@ -1,21 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { SessionProvider } from "@/components/providers/SessionProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "MoneyMate - Split Bills, Not Friendships",
-  description: "A simple way to split bills with friends without the hassle",
-
+  title: "Money Mate - Own what you owe",
+  description: "AI-powered group expense tracking and bill splitting made simple",
   icons: {
     icon: "/favicon.jpeg",
     shortcut: "/favicon.jpeg",
@@ -29,13 +25,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <main className="min-h-screen">
-          {children}
-        </main>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={`${inter.variable} antialiased bg-[var(--color-bg)] text-[var(--color-text)] min-h-screen`}>
+        <SessionProvider>
+          <QueryProvider>
+            <main className="min-h-screen">
+              {children}
+            </main>
+          </QueryProvider>
+        </SessionProvider>
       </body>
     </html>
   );
