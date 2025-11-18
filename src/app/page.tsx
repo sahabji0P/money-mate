@@ -72,7 +72,7 @@ function LandingPage() {
               <div className="w-10 h-10 bg-text rounded-xl flex items-center justify-center">
                 <Receipt className="w-6 h-6 text-primary" />
               </div>
-              <span className="text-2xl font-audiowide font-bold text-text">Owwn</span>
+              <span className="text-2xl font-audiowide font-bold text-text">Money Mate</span>
             </div>
             <button
               onClick={() => signIn('google', { callbackUrl: '/' })}
@@ -194,7 +194,7 @@ function LandingPage() {
 
         {/* Footer */}
         <footer className="px-4 py-8 sm:px-6 lg:px-8 text-center text-text-secondary text-sm">
-          <p>Own what you owe. No spreadsheets required.</p>
+          <p>Split bills effortlessly. No spreadsheets required.</p>
         </footer>
       </div>
     </div>
@@ -230,8 +230,8 @@ function Dashboard({ user }: { user: any }) {
               <Receipt className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-audiowide font-bold text-text">Owwn</h1>
-              <p className="text-xs text-text-secondary">Own what you owe</p>
+              <h1 className="text-xl font-audiowide font-bold text-text">Money Mate</h1>
+              <p className="text-xs text-text-secondary">Split bills effortlessly</p>
             </div>
           </div>
 

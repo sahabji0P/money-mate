@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Money Mate - Own what you owe",
+  title: "Money Mate - Split bills effortlessly",
   description: "AI-powered group expense tracking and bill splitting made simple",
   icons: {
     icon: "/favicon.jpeg",
