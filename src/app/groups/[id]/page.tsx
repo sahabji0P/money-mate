@@ -1517,17 +1517,22 @@ function AddMemberModal({ isOpen, onClose, groupId }: any) {
   // Get existing members to check duplicates
   const { data: group } = useQuery({
     queryKey: ['group', groupId],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${groupId}`);
+      if (!res.ok) throw new Error('Failed to fetch group');
+      return res.json();
+    },
     enabled: !!groupId && isOpen,
   });
 
   const existingMemberIds = group?.members?.map((m: any) => m.user.id) || [];
 
   const addMemberMutation = useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async (userEmail: string) => {
       const res = await fetch(`/api/groups/${groupId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ email: userEmail }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -1582,10 +1587,10 @@ function AddMemberModal({ isOpen, onClose, groupId }: any) {
     }
   };
 
-  const handleAddMember = async (userId: string) => {
+  const handleAddMember = async (userEmail: string) => {
     setFormError('');
     try {
-      await addMemberMutation.mutateAsync(userId);
+      await addMemberMutation.mutateAsync(userEmail);
     } catch (error: any) {
       console.error('Failed to add member:', error);
       setFormError(error.message || 'Failed to add member');
