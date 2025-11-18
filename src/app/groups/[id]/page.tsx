@@ -7,7 +7,7 @@ import { useState } from 'react';
 import {
   ArrowLeft, Plus, Users, Receipt, Settings as SettingsIcon,
   TrendingUp, LayoutGrid, CreditCard, UserCheck, Download,
-  Trash2, UserPlus, Check, X, AlertCircle, ChevronDown
+  Trash2, UserPlus, Check, X, AlertCircle, ChevronDown, Camera, Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -675,6 +675,11 @@ function AddExpenseDrawer({ isOpen, onClose, group, members }: any) {
   const [paidByMultiple, setPaidByMultiple] = useState<Record<string, string>>({});
   const [isMultiplePayers, setIsMultiplePayers] = useState(false);
 
+  // Bill scanning state
+  const [scanning, setScanning] = useState(false);
+  const [scannedData, setScannedData] = useState<any>(null);
+  const [scanError, setScanError] = useState('');
+
   const createExpenseMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await fetch(`/api/groups/${group.id}/expenses`, {
@@ -708,6 +713,84 @@ function AddExpenseDrawer({ isOpen, onClose, group, members }: any) {
     setPaidByMultiple({});
     setIsMultiplePayers(false);
     setFormError('');
+    setScannedData(null);
+    setScanError('');
+  };
+
+  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setScanError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setScanError('Image must be less than 10MB');
+      return;
+    }
+
+    setScanning(true);
+    setScanError('');
+    setScannedData(null);
+
+    try {
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64Image = reader.result as string;
+
+          // Call analyze-receipt API
+          const res = await fetch('/api/analyze-receipt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Image }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            setScanError(data.error || 'Failed to analyze receipt');
+            setScanning(false);
+            return;
+          }
+
+          setScannedData(data);
+          setScanning(false);
+        } catch (error) {
+          setScanError('Failed to analyze receipt. Please try again.');
+          setScanning(false);
+        }
+      };
+
+      reader.onerror = () => {
+        setScanError('Failed to read image file');
+        setScanning(false);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      setScanError('Failed to process image');
+      setScanning(false);
+    }
+
+    // Reset file input
+    e.target.value = '';
+  };
+
+  const useScannedData = () => {
+    if (!scannedData) return;
+
+    // Populate form with scanned data
+    setAmount((scannedData.amount / 100).toFixed(2));
+    setDescription(scannedData.description);
+
+    // Close the scanned data card
+    setScannedData(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -813,6 +896,121 @@ function AddExpenseDrawer({ isOpen, onClose, group, members }: any) {
           <DrawerHeader className="px-0">
             <DrawerTitle className="text-xl font-bold text-text">Add Expense</DrawerTitle>
           </DrawerHeader>
+
+          {/* Scan Receipt Section */}
+          <div className="mt-4 mb-6">
+            <input
+              type="file"
+              id="receipt-upload"
+              className="hidden"
+              accept="image/*"
+              onChange={handleScanReceipt}
+            />
+            <label
+              htmlFor="receipt-upload"
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-primary-elevated border border-border rounded-xl hover:bg-primary-hover transition-all duration-base cursor-pointer"
+            >
+              <Camera className="w-5 h-5 text-text-secondary" />
+              <span className="text-sm font-medium text-text">Scan Receipt</span>
+            </label>
+
+            {/* Scanning Loading State */}
+            {scanning && (
+              <div className="mt-4 p-4 bg-primary-hover border border-border rounded-xl flex items-center gap-3">
+                <Loader2 className="w-5 h-5 text-text animate-spin" />
+                <div>
+                  <p className="text-sm font-medium text-text">Analyzing receipt...</p>
+                  <p className="text-xs text-text-secondary mt-1">This will take a few seconds</p>
+                </div>
+              </div>
+            )}
+
+            {/* Scan Error */}
+            {scanError && (
+              <div className="mt-4 p-4 bg-primary-elevated border border-border rounded-xl">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-text-secondary flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-text">Couldn't read receipt</p>
+                    <p className="text-xs text-text-secondary mt-1">{scanError}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setScanError('')}
+                    className="text-text-secondary hover:text-text transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Scanned Data Preview */}
+            {scannedData && !scanning && (
+              <div className="mt-4 p-4 bg-primary-elevated border border-border rounded-xl space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-text flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-text">Receipt scanned successfully</p>
+                      <p className="text-xs text-text-secondary mt-1">Review and use details below</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setScannedData(null)}
+                    className="text-text-secondary hover:text-text transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-border-subtle">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-text-secondary">Amount:</span>
+                    <span className="text-sm font-medium text-text">{group.currencySymbol}{(scannedData.amount / 100).toFixed(2)}</span>
+                  </div>
+                  {scannedData.description && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-text-secondary">Description:</span>
+                      <span className="text-sm font-medium text-text">{scannedData.description}</span>
+                    </div>
+                  )}
+                  {scannedData.merchant && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-text-secondary">Merchant:</span>
+                      <span className="text-sm font-medium text-text">{scannedData.merchant}</span>
+                    </div>
+                  )}
+                  {scannedData.items && scannedData.items.length > 0 && (
+                    <div className="pt-2 border-t border-border-subtle">
+                      <p className="text-xs text-text-secondary mb-2">Items:</p>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {scannedData.items.slice(0, 5).map((item: any, idx: number) => (
+                          <div key={idx} className="flex justify-between text-xs">
+                            <span className="text-text-secondary">{item.name}</span>
+                            <span className="text-text">{group.currencySymbol}{(item.price / 100).toFixed(2)}</span>
+                          </div>
+                        ))}
+                        {scannedData.items.length > 5 && (
+                          <p className="text-xs text-text-tertiary italic">+{scannedData.items.length - 5} more items</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={useScannedData}
+                  className="w-full py-2.5 px-4 bg-text hover:bg-text/90 text-primary font-medium rounded-xl transition-all duration-base flex items-center justify-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  Use These Details
+                </button>
+              </div>
+            )}
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-4">
             {/* Amount - Prominent centered display */}

@@ -1,152 +1,119 @@
-import { ReceiptItem } from '@/types/receipt';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Don't throw an error if the API key is missing
-const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
-let genAI: GoogleGenerativeAI | null = null;
-
-if (GEMINI_API_KEY) {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-}
-
-interface ReceiptItemResponse {
-    id?: string;
-    name: string;
-    price: number | string;
-    quantity?: number;
-    assignedTo: string[];
-}
-
-async function analyzeReceiptWithGemini(base64Image: string): Promise<ReceiptItem[]> {
-    // If no API key is set, return mock data
-    if (!genAI) {
-        console.warn('GOOGLE_GEMINI_API_KEY is not set. Returning mock data.');
-        return [
-            { id: 'item-1', name: 'Burger', price: 12.99, quantity: 1, assignedTo: [] },
-            { id: 'item-2', name: 'Fries', price: 4.99, quantity: 1, assignedTo: [] },
-            { id: 'item-3', name: 'Soda', price: 2.49, quantity: 2, assignedTo: [] },
-            { id: 'item-4', name: 'Ice Cream', price: 5.99, quantity: 1, assignedTo: [] },
-        ];
-    }
-
-    try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-        const prompt = `You are a Receipt Analysis AI assistant. Analyze the following receipt image and extract all items and their prices.
-IMPORTANT: Maintain the exact prices and item names as they appear on the receipt.
-
-Return a single JSON object with the following structure:
-{
-  "items": [
-    {
-      "id": "unique_id",
-      "name": "exact item name as shown on receipt",
-      "price": price_as_number,
-      "quantity": quantity_as_number,
-      "assignedTo": []
-    }
-  ]
-}
-
-IMPORTANT INSTRUCTIONS:
-1. Extract ONLY actual products/items and their prices from the receipt
-2. DO NOT include TOTAL, SUBTOTAL, CASH, PAYMENT, or CHANGE entries
-3. Keep item names exactly as they appear on the receipt
-4. Convert prices to numbers (remove currency symbols)
-5. Ensure the JSON is valid and follows the exact structure shown above
-6. Set quantity to 1 by default unless you can clearly identify a quantity`;
-
-        const parts = [
-            { text: prompt },
-            {
-                inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: base64Image.split(',')[1] // Remove the data URL prefix
-                }
-            }
-        ];
-
-        const result = await model.generateContent(parts);
-        const response = await result.response;
-        const text = response.text();
-
-        // Validate that the response is valid JSON
-        try {
-            const data = JSON.parse(text);
-            // Filter out common total/payment entries
-            return data.items
-                .filter((item: ReceiptItemResponse) => {
-                    const name = item.name.toLowerCase();
-                    return !(
-                        name.includes('total') ||
-                        name.includes('subtotal') ||
-                        name.includes('cash') ||
-                        name.includes('change') ||
-                        name.includes('payment')
-                    );
-                })
-                .map((item: ReceiptItemResponse, index: number) => ({
-                    id: item.id || `item-${index + 1}`,
-                    name: item.name,
-                    price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-                    quantity: item.quantity || 1, // Default to 1 if not provided
-                    assignedTo: [],
-                }));
-        } catch {
-            // If the response isn't valid JSON, try to extract JSON from it
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const data = JSON.parse(jsonMatch[0]);
-                // Filter out common total/payment entries
-                return data.items
-                    .filter((item: ReceiptItemResponse) => {
-                        const name = item.name.toLowerCase();
-                        return !(
-                            name.includes('total') ||
-                            name.includes('subtotal') ||
-                            name.includes('cash') ||
-                            name.includes('change') ||
-                            name.includes('payment')
-                        );
-                    })
-                    .map((item: ReceiptItemResponse, index: number) => ({
-                        id: item.id || `item-${index + 1}`,
-                        name: item.name,
-                        price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-                        quantity: item.quantity || 1, // Default to 1 if not provided
-                        assignedTo: [],
-                    }));
-            }
-            throw new Error('Failed to get valid JSON response from Gemini');
-        }
-    } catch (error) {
-        console.error('Error in analyzeReceiptWithGemini:', error);
-        if (error instanceof Error && error.message.includes('404')) {
-            throw new Error('The receipt analysis service is temporarily unavailable. Please try again later.');
-        }
-        throw error;
-    }
-}
+// Initialize Gemini API
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
 
 export async function POST(request: Request) {
-    try {
-        const { image } = await request.json();
-
-        if (!image) {
-            return NextResponse.json(
-                { error: 'No image provided' },
-                { status: 400 }
-            );
-        }
-
-        const items = await analyzeReceiptWithGemini(image);
-        return NextResponse.json({ items });
-    } catch (error) {
-        console.error('Error processing receipt:', error);
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Failed to process receipt' },
-            { status: 500 }
-        );
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-} 
+
+    const body = await request.json();
+    const { image } = body;
+
+    if (!image) {
+      return NextResponse.json({ error: 'Image is required' }, { status: 400 });
+    }
+
+    // Validate base64 image
+    if (!image.startsWith('data:image/')) {
+      return NextResponse.json({ error: 'Invalid image format' }, { status: 400 });
+    }
+
+    // Extract base64 data
+    const base64Data = image.split(',')[1];
+    const mimeType = image.split(';')[0].split(':')[1];
+
+    // Use Gemini 2.5 Flash for fast receipt analysis
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+
+    const prompt = `You are analyzing a receipt or bill image to extract expense details for a bill-splitting app.
+
+Extract the following information accurately:
+- Total amount paid (the final total, not subtotals or tax amounts)
+- Merchant/vendor name (restaurant, store, etc.)
+- Date of purchase (if visible)
+- Brief description of the purchase (e.g., "Dinner at Pizza Place", "Grocery shopping", "Coffee")
+- Individual line items with prices (if clearly visible, up to 10 items)
+
+Return ONLY a valid JSON object in this exact format (no markdown, no explanation):
+{
+  "amount": <number in cents, e.g., 4250 for $42.50>,
+  "description": "<brief description string>",
+  "merchant": "<merchant name or null>",
+  "date": "<YYYY-MM-DD or null>",
+  "items": [
+    {"name": "<item name>", "price": <price in cents>},
+    ...
+  ] or null,
+  "currency": "<currency symbol, default $>"
+}
+
+If the image is not a receipt or you cannot read it clearly, return:
+{
+  "error": "Unable to read receipt. Please ensure the image is clear and shows the total amount."
+}
+
+Important: Always return valid JSON only, no additional text.`;
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType,
+          data: base64Data,
+        },
+      },
+    ]);
+
+    const response = result.response;
+    const text = response.text();
+
+    // Parse the JSON response
+    let parsedData;
+    try {
+      // Remove any markdown code blocks if present
+      const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      parsedData = JSON.parse(cleanText);
+    } catch (parseError) {
+      console.error('Failed to parse Gemini response:', text);
+      return NextResponse.json(
+        { error: 'Failed to analyze receipt. Please try again with a clearer image.' },
+        { status: 500 }
+      );
+    }
+
+    // Check if Gemini returned an error
+    if (parsedData.error) {
+      return NextResponse.json({ error: parsedData.error }, { status: 400 });
+    }
+
+    // Validate required fields
+    if (!parsedData.amount || parsedData.amount <= 0) {
+      return NextResponse.json(
+        { error: 'Could not detect a valid amount. Please enter manually.' },
+        { status: 400 }
+      );
+    }
+
+    // Return the extracted data
+    return NextResponse.json({
+      amount: parsedData.amount,
+      description: parsedData.description || 'Scanned expense',
+      merchant: parsedData.merchant || null,
+      date: parsedData.date || null,
+      items: parsedData.items || null,
+      currency: parsedData.currency || '$',
+    });
+  } catch (error: any) {
+    console.error('Error analyzing receipt:', error);
+    return NextResponse.json(
+      { error: 'Failed to analyze receipt. Please try again.' },
+      { status: 500 }
+    );
+  }
+}
