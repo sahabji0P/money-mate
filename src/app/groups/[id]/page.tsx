@@ -477,10 +477,8 @@ function MembersTab({ group, members, isAdmin, currentUserId, onAddMember }: any
 
   const removeMemberMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const res = await fetch(`/api/groups/${group.id}/members`, {
+      const res = await fetch(`/api/groups/${group.id}/members/${userId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
       });
       if (!res.ok) throw new Error('Failed to remove member');
       return res.json();
@@ -745,35 +743,22 @@ function AddExpenseDrawer({ isOpen, onClose, group, members }: any) {
         }
       }
 
-      let splits: { userId: string; amount: number }[] = [];
-      if (splitType === 'equal') {
-        const n = splitBetween.length;
-        const base = Math.floor(totalCents / n);
-        let remainder = totalCents - base * n;
-        splits = splitBetween.map((id) => {
-          const extra = remainder > 0 ? 1 : 0;
-          if (remainder > 0) remainder -= 1;
-          return { userId: id, amount: base + extra };
-        });
-      } else if (splitType === 'custom') {
+      // Validate split data before sending
+      if (splitType === 'custom') {
         let sum = 0;
-        splits = splitBetween.map((id) => {
+        splitBetween.forEach((id) => {
           const v = Math.round(parseFloat(exactValues[id] || '0') * 100);
           sum += v;
-          return { userId: id, amount: v };
         });
         if (sum !== totalCents) {
           setFormError('Exact amounts must add up to the total amount.');
           return;
         }
-      } else {
-        // percentage
+      } else if (splitType === 'percentage') {
         let pctSum = 0;
-        splits = splitBetween.map((id) => {
+        splitBetween.forEach((id) => {
           const p = parseFloat(percentValues[id] || '0');
           pctSum += isFinite(p) ? p : 0;
-          const memberAmount = Math.round((p / 100) * totalCents);
-          return { userId: id, amount: memberAmount };
         });
         if (Math.abs(pctSum - 100) > 0.01) {
           setFormError('Percentages must add up to 100%.');
@@ -789,15 +774,32 @@ function AddExpenseDrawer({ isOpen, onClose, group, members }: any) {
           }))
         : [{ userId: paidBy, amount: totalCents }];
 
-      await createExpenseMutation.mutateAsync({
+      // Prepare request body based on split type
+      const requestData: any = {
         description,
         amount: totalCents,
         category: category || 'other',
         date: new Date().toISOString(),
         splitType,
         payments,
-        splits,
-      });
+      };
+
+      // Add the correct field based on splitType
+      if (splitType === 'equal') {
+        requestData.splitBetween = splitBetween;
+      } else if (splitType === 'custom') {
+        requestData.customSplits = splitBetween.map((id) => ({
+          userId: id,
+          amount: Math.round(parseFloat(exactValues[id] || '0') * 100)
+        }));
+      } else if (splitType === 'percentage') {
+        requestData.percentageSplits = splitBetween.map((id) => ({
+          userId: id,
+          percentage: parseFloat(percentValues[id] || '0')
+        }));
+      }
+
+      await createExpenseMutation.mutateAsync(requestData);
     } catch (error: any) {
       console.error('Failed to add expense:', error);
       setFormError(error.message || 'Failed to create expense');
