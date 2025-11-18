@@ -1683,7 +1683,7 @@ function AddMemberModal({ isOpen, onClose, groupId }: any) {
                       </div>
                     ) : (
                       <button
-                        onClick={() => handleAddMember(user.id)}
+                        onClick={() => handleAddMember(user.email)}
                         disabled={addMemberMutation.isPending}
                         className="bg-[#10B981] hover:bg-[#059669] text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                       >

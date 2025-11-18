@@ -36,9 +36,17 @@ export async function POST(
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    // Find user by email
-    const userToAdd = await prisma.user.findUnique({
-      where: { email },
+    // Normalize email (lowercase and trim)
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find user by email (case-insensitive)
+    const userToAdd = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: normalizedEmail,
+          mode: 'insensitive',
+        }
+      },
     });
 
     if (!userToAdd) {
