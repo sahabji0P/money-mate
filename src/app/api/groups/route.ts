@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { calculateBalances } from '@/lib/calculations';
 
-// GET /api/groups - List user's groups
+// GET /api/groups - List user's groups with balances
 export async function GET() {
   try {
     const session = await auth();
@@ -25,31 +26,59 @@ export async function GET() {
           },
         },
         members: {
-          where: {
-            userId: session.user.id,
-          },
           select: {
+            userId: true,
             role: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
+        expenses: {
+          include: {
+            payments: true,
+            splits: true,
+          },
+        },
+        settlements: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    const groupsWithRole = groups.map((group) => ({
-      id: group.id,
-      name: group.name,
-      description: group.description,
-      currency: group.currency,
-      currencySymbol: group.currencySymbol,
-      memberCount: group._count.members,
-      role: group.members[0]?.role || 'member',
-      createdAt: group.createdAt,
-    }));
+    const groupsWithBalance = groups.map((group: typeof groups[0]) => {
+      // Get current user's role
+      const currentUserMember = group.members.find((m: typeof group.members[0]) => m.userId === session.user!.id);
 
-    return NextResponse.json(groupsWithRole);
+      // Calculate balances for this group
+      const users = group.members.map((m: typeof group.members[0]) => ({
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+      }));
+
+      const balances = calculateBalances(group.expenses, group.settlements, users);
+      const userBalance = balances.find(b => b.userId === session.user!.id);
+
+      return {
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        currency: group.currency,
+        currencySymbol: group.currencySymbol,
+        memberCount: group._count.members,
+        role: currentUserMember?.role || 'member',
+        userBalance: (userBalance?.balance || 0) / 100, // Convert cents to dollars
+        createdAt: group.createdAt,
+      };
+    });
+
+    return NextResponse.json(groupsWithBalance);
   } catch (error) {
     console.error('Error fetching groups:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -54,7 +54,13 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(settlements);
+    // Convert cents to dollars for frontend
+    const settlementsInDollars = settlements.map((settlement: typeof settlements[0]) => ({
+      ...settlement,
+      amount: settlement.amount / 100,
+    }));
+
+    return NextResponse.json(settlementsInDollars);
   } catch (error) {
     console.error('Error fetching settlements:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -110,6 +116,9 @@ export async function POST(
       return NextResponse.json({ error: 'Valid amount is required' }, { status: 400 });
     }
 
+    // Convert dollars to cents for storage
+    const amountInCents = Math.round(amount * 100);
+
     // Verify both users are group members
     const members = await prisma.groupMember.findMany({
       where: {
@@ -131,7 +140,7 @@ export async function POST(
         groupId,
         fromUserId,
         toUserId,
-        amount,
+        amount: amountInCents,
         notes,
       },
       include: {
@@ -154,7 +163,13 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(settlement, { status: 201 });
+    // Convert cents to dollars for frontend
+    const settlementInDollars = {
+      ...settlement,
+      amount: settlement.amount / 100,
+    };
+
+    return NextResponse.json(settlementInDollars, { status: 201 });
   } catch (error) {
     console.error('Error creating settlement:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

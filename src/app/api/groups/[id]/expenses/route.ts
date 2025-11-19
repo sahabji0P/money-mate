@@ -67,7 +67,21 @@ export async function GET(
       },
     });
 
-    return NextResponse.json(expenses);
+    // Convert cents to dollars for frontend
+    const expensesInDollars = expenses.map((expense: typeof expenses[0]) => ({
+      ...expense,
+      amount: expense.amount / 100,
+      payments: expense.payments.map((p: typeof expense.payments[0]) => ({
+        ...p,
+        amount: p.amount / 100,
+      })),
+      splits: expense.splits.map((s: typeof expense.splits[0]) => ({
+        ...s,
+        amount: s.amount / 100,
+      })),
+    }));
+
+    return NextResponse.json(expensesInDollars);
   } catch (error) {
     console.error('Error fetching expenses:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -128,9 +142,16 @@ export async function POST(
       return NextResponse.json({ error: 'At least one payer is required' }, { status: 400 });
     }
 
+    // Convert dollars to cents for storage
+    const amountInCents = Math.round(amount * 100);
+    const paymentsInCents = payments.map((p: any) => ({
+      userId: p.userId,
+      amount: Math.round(p.amount * 100),
+    }));
+
     // Validate payments sum to total
-    const totalPaid = payments.reduce((sum: number, p: any) => sum + p.amount, 0);
-    if (totalPaid !== amount) {
+    const totalPaid = paymentsInCents.reduce((sum: number, p: any) => sum + p.amount, 0);
+    if (Math.abs(totalPaid - amountInCents) > 1) { // Allow 1 cent rounding difference
       return NextResponse.json(
         { error: 'Payment amounts must equal total expense' },
         { status: 400 }
@@ -158,7 +179,7 @@ export async function POST(
       );
     }
 
-    // Calculate splits based on type
+    // Calculate splits based on type (all amounts in cents)
     let splits: { userId: string; amount: number }[] = [];
 
     if (splitType === 'equal') {
@@ -168,22 +189,27 @@ export async function POST(
           { status: 400 }
         );
       }
-      splits = splitEqually(amount, splitBetween);
+      splits = splitEqually(amountInCents, splitBetween);
     } else if (splitType === 'custom') {
       if (!customSplits || customSplits.length === 0) {
         return NextResponse.json({ error: 'Custom splits required' }, { status: 400 });
       }
-      const validation = validateCustomSplit(amount, customSplits);
+      // Convert custom splits to cents
+      const customSplitsInCents = customSplits.map((s: any) => ({
+        userId: s.userId,
+        amount: Math.round(s.amount * 100),
+      }));
+      const validation = validateCustomSplit(amountInCents, customSplitsInCents);
       if (!validation.valid) {
         return NextResponse.json({ error: validation.error }, { status: 400 });
       }
-      splits = customSplits;
+      splits = customSplitsInCents;
     } else if (splitType === 'percentage') {
       if (!percentageSplits || percentageSplits.length === 0) {
         return NextResponse.json({ error: 'Percentage splits required' }, { status: 400 });
       }
       try {
-        splits = splitByPercentages(amount, percentageSplits);
+        splits = splitByPercentages(amountInCents, percentageSplits);
       } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
@@ -191,19 +217,19 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid split type' }, { status: 400 });
     }
 
-    // Create expense with payments and splits
+    // Create expense with payments and splits (all in cents)
     const expense = await prisma.expense.create({
       data: {
         groupId,
         description,
-        amount,
+        amount: amountInCents,
         category: category || 'other',
         date: date ? new Date(date) : new Date(),
         notes,
         receiptImage,
         createdById: session.user.id,
         payments: {
-          create: payments.map((p: any) => ({
+          create: paymentsInCents.map((p: any) => ({
             userId: p.userId,
             amount: p.amount,
           })),
@@ -244,7 +270,21 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(expense, { status: 201 });
+    // Convert cents to dollars for frontend
+    const expenseInDollars = {
+      ...expense,
+      amount: expense.amount / 100,
+      payments: expense.payments.map((p: typeof expense.payments[0]) => ({
+        ...p,
+        amount: p.amount / 100,
+      })),
+      splits: expense.splits.map((s: typeof expense.splits[0]) => ({
+        ...s,
+        amount: s.amount / 100,
+      })),
+    };
+
+    return NextResponse.json(expenseInDollars, { status: 201 });
   } catch (error) {
     console.error('Error creating expense:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

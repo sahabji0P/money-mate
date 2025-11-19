@@ -51,7 +51,7 @@ export async function GET(
       },
     });
 
-    const users = members.map((m) => ({
+    const users = members.map((m: typeof members[0]) => ({
       id: m.user.id,
       name: m.user.name,
       email: m.user.email,
@@ -76,22 +76,37 @@ export async function GET(
       const pairwiseMap = calculatePairwiseBalances(userId, expenses, settlements, users);
 
       const pairwiseBalances = users
-        .filter((u) => u.id !== userId)
-        .map((u) => ({
+        .filter((u: typeof users[0]) => u.id !== userId)
+        .map((u: typeof users[0]) => ({
           userId: u.id,
           userName: u.name || 'Unknown',
           userEmail: u.email,
-          balance: pairwiseMap.get(u.id) || 0,
+          balance: (pairwiseMap.get(u.id) || 0) / 100, // Convert cents to dollars
         }));
 
       return NextResponse.json({ pairwise: pairwiseBalances });
     }
 
-    // Calculate overall balances
-    const balances = calculateBalances(expenses, settlements, users);
+    // Calculate overall balances (returns values in cents)
+    const balancesInCents = calculateBalances(expenses, settlements, users);
 
-    // Generate settlement suggestions
-    const suggestions = generateSettlementSuggestions(balances);
+    // Convert balances to dollars for frontend
+    const balances = balancesInCents.map(b => ({
+      ...b,
+      balance: b.balance / 100,
+    }));
+
+    // Generate settlement suggestions (in cents)
+    const rawSuggestions = generateSettlementSuggestions(balancesInCents);
+
+    // Transform suggestions to match frontend expectations and convert to dollars
+    const suggestions = rawSuggestions.map(s => ({
+      fromUserId: s.from,
+      fromUserName: s.fromName,
+      toUserId: s.to,
+      toUserName: s.toName,
+      amount: s.amount / 100, // Convert cents to dollars
+    }));
 
     return NextResponse.json({
       balances,
