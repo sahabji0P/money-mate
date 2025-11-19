@@ -3,28 +3,49 @@
 import { useAuth } from '@/lib/useAuth';
 import { signIn, signOut } from 'next-auth/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, ArrowRight, Receipt, TrendingUp, Sparkles, LogOut, Plus, DollarSign, Settings } from 'lucide-react';
+import {
+  Users,
+  ArrowRight,
+  Receipt,
+  TrendingUp,
+  Sparkles,
+  Plus,
+  DollarSign,
+  ArrowUpRight,
+  ArrowDownRight,
+  CheckCircle2,
+  Wallet,
+  Zap,
+  Shield,
+  Globe
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
-import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
 import Link from 'next/link';
 import { CURRENCIES } from '@/lib/constants';
 import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/layout/Sidebar';
+import Header from '@/components/layout/Header';
+import MobileNav from '@/components/layout/MobileNav';
+import Avatar, { AvatarGroup } from '@/components/shared/Avatar';
+import Badge from '@/components/shared/Badge';
+import EmptyState from '@/components/shared/EmptyState';
 
 const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
+      staggerChildren: 0.08
     }
   }
 };
 
 const item = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 }
+  show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
 
 export default function Home() {
@@ -44,12 +65,14 @@ export default function Home() {
 function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-primary flex items-center justify-center">
-      <div className="space-y-4 w-full max-w-md p-4">
-        <div className="h-12 bg-primary-elevated rounded-lg skeleton" />
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-32 bg-primary-elevated rounded-lg skeleton" />
-          ))}
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-accent-emerald/20 flex items-center justify-center animate-pulse">
+          <Wallet className="w-6 h-6 text-accent-emerald" />
+        </div>
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-accent-emerald animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-2 h-2 rounded-full bg-accent-emerald animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-2 h-2 rounded-full bg-accent-emerald animate-bounce" style={{ animationDelay: '300ms' }} />
         </div>
       </div>
     </div>
@@ -59,142 +82,172 @@ function LoadingSkeleton() {
 function LandingPage() {
   return (
     <div className="min-h-screen bg-primary relative overflow-hidden">
-      {/* Floating blobs - subtle monochromatic */}
-      <div className="absolute -top-40 -left-40 w-80 h-80 bg-text/5 blur-3xl rounded-full animate-blob opacity-60" />
-      <div className="absolute -top-20 -right-40 w-80 h-80 bg-text/5 blur-3xl rounded-full animate-blob animation-delay-2000 opacity-60" />
-      <div className="absolute -bottom-40 left-1/3 w-80 h-80 bg-text/5 blur-3xl rounded-full animate-blob animation-delay-4000 opacity-60" />
+      {/* Background gradient orbs */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-emerald/10 blur-[120px] rounded-full" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent-blue/10 blur-[120px] rounded-full" />
 
       <div className="relative z-10">
         {/* Header */}
-        <header className="px-4 py-6 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-text rounded-xl flex items-center justify-center">
-                <Receipt className="w-6 h-6 text-primary" />
+        <header className="px-4 py-5 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-emerald to-accent-emerald-dark flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-audiowide font-bold text-text">Money Mate</span>
+              <span className="text-xl font-semibold text-text">MoneyMate</span>
             </div>
             <button
               onClick={() => signIn('google', { callbackUrl: '/' })}
-              className="hidden sm:flex items-center gap-2 bg-text text-primary px-6 py-2.5 rounded-xl font-medium hover:bg-text/90 transition-all duration-base"
+              className="hidden sm:flex items-center gap-2 bg-accent-emerald hover:bg-accent-emerald-dark text-white px-5 py-2.5 rounded-xl font-medium transition-all duration-200 hover:shadow-glow-emerald"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Continue with Google
+              Sign In
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </header>
 
         {/* Hero Section */}
-        <main className="px-4 py-12 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="px-4 py-12 sm:py-20 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
             {/* Hero */}
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 bg-primary-elevated border border-border rounded-full px-4 py-2 mb-6">
-                <Sparkles className="w-4 h-4 text-text" />
-                <span className="text-sm font-medium text-text">AI-powered group expense tracking</span>
-              </div>
+            <div className="text-center mb-20">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="inline-flex items-center gap-2 bg-accent-emerald/10 border border-accent-emerald/20 rounded-full px-4 py-2 mb-6">
+                  <Sparkles className="w-4 h-4 text-accent-emerald" />
+                  <span className="text-sm font-medium text-accent-emerald">AI-powered expense splitting</span>
+                </div>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light mb-6 leading-tight">
-                <span className="text-text">
-                  Split bills without
-                </span>
-                <br />
-                <span className="text-text">awkward maths</span>
-              </h1>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold mb-6 leading-tight tracking-tight">
+                  <span className="text-text">Split expenses</span>
+                  <br />
+                  <span className="gradient-text-emerald">without the drama</span>
+                </h1>
 
-              <p className="text-xl text-text-secondary mb-8 max-w-2xl mx-auto font-normal">
-                Track shared expenses, split bills fairly, and settle up with friends. All without spreadsheets or mental gymnastics.
-              </p>
+                <p className="text-lg text-text-secondary mb-10 max-w-xl mx-auto">
+                  Track shared expenses, see who owes what, and settle up instantly.
+                  No more awkward conversations or mental math.
+                </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button
-                  onClick={() => signIn('google', { callbackUrl: '/' })}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-text hover:bg-text/90 text-primary px-8 py-4 rounded-xl font-medium transition-all duration-base hover:shadow-lg shadow-text/20 active:scale-[0.98]"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  Get Started Free
-                </button>
-                <div className="flex items-center gap-2 text-sm text-text-secondary">
-                  <span className="inline-flex items-center gap-1 bg-primary-elevated border border-border rounded-full px-3 py-1.5">
-                    Track every bill
-                  </span>
-                  <span className="inline-flex items-center gap-1 bg-primary-elevated border border-border rounded-full px-3 py-1.5">
-                    Built for real groups
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <button
+                    onClick={() => signIn('google', { callbackUrl: '/' })}
+                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-accent-emerald hover:bg-accent-emerald-dark text-white px-8 py-4 rounded-xl font-medium transition-all duration-200 hover:shadow-glow-emerald"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Continue with Google
+                  </button>
+                  <span className="text-sm text-text-tertiary">
+                    Free forever - No credit card
                   </span>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Feature Cards */}
-            <div className="grid md:grid-cols-3 gap-6 mb-16">
-              <div className="bg-primary-elevated border border-border-subtle rounded-2xl p-6 hover:border-border transition-all duration-base hover-lift">
-                <div className="w-12 h-12 bg-primary-hover rounded-xl flex items-center justify-center mb-4">
-                  <Receipt className="w-6 h-6 text-text" />
+            <motion.div
+              variants={container}
+              initial="hidden"
+              animate="show"
+              className="grid md:grid-cols-3 gap-4 mb-20"
+            >
+              <motion.div variants={item} className="group p-6 rounded-2xl bg-primary-elevated border border-border-subtle hover:border-accent-emerald/50 transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-accent-emerald/10 flex items-center justify-center mb-4 group-hover:bg-accent-emerald/20 transition-colors">
+                  <Receipt className="w-6 h-6 text-accent-emerald" />
                 </div>
-                <h3 className="text-xl font-medium text-text mb-2">Smart expense timelines</h3>
-                <p className="text-text-secondary">See who paid what, when. No more digging through old messages to remember who owes what.</p>
-              </div>
+                <h3 className="text-lg font-medium text-text mb-2">Smart Receipt Scanning</h3>
+                <p className="text-sm text-text-secondary">Snap a photo and let AI extract items, prices, and split them automatically.</p>
+              </motion.div>
 
-              <div className="bg-primary-elevated border border-border-subtle rounded-2xl p-6 hover:border-border transition-all duration-base hover-lift">
-                <div className="w-12 h-12 bg-primary-hover rounded-xl flex items-center justify-center mb-4">
-                  <TrendingUp className="w-6 h-6 text-text" />
+              <motion.div variants={item} className="group p-6 rounded-2xl bg-primary-elevated border border-border-subtle hover:border-accent-blue/50 transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-accent-blue/10 flex items-center justify-center mb-4 group-hover:bg-accent-blue/20 transition-colors">
+                  <TrendingUp className="w-6 h-6 text-accent-blue" />
                 </div>
-                <h3 className="text-xl font-medium text-text mb-2">Balances that make sense</h3>
-                <p className="text-text-secondary">See exactly who owes who at a glance. Smart settlement suggestions minimize transactions.</p>
-              </div>
+                <h3 className="text-lg font-medium text-text mb-2">Clear Balance View</h3>
+                <p className="text-sm text-text-secondary">See exactly who owes whom at a glance. Minimize transactions with smart suggestions.</p>
+              </motion.div>
 
-              <div className="bg-primary-elevated border border-border-subtle rounded-2xl p-6 hover:border-border transition-all duration-base hover-lift">
-                <div className="w-12 h-12 bg-primary-hover rounded-xl flex items-center justify-center mb-4">
-                  <Sparkles className="w-6 h-6 text-text" />
+              <motion.div variants={item} className="group p-6 rounded-2xl bg-primary-elevated border border-border-subtle hover:border-accent-purple/50 transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-accent-purple/10 flex items-center justify-center mb-4 group-hover:bg-accent-purple/20 transition-colors">
+                  <Users className="w-6 h-6 text-accent-purple" />
                 </div>
-                <h3 className="text-xl font-medium text-text mb-2">AI-powered inputs</h3>
-                <p className="text-text-secondary">Just type "Split dinner between me and Alice for $50" and let AI do the rest.</p>
-              </div>
-            </div>
+                <h3 className="text-lg font-medium text-text mb-2">Group Management</h3>
+                <p className="text-sm text-text-secondary">Create groups for roommates, trips, or events. Add members and track expenses together.</p>
+              </motion.div>
+            </motion.div>
 
-            {/* App Preview */}
-            <div className="bg-primary-elevated border border-border rounded-3xl p-8 max-w-md mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-medium text-text">Goa 2025</h3>
-                  <p className="text-sm text-text-secondary">4 members</p>
+            {/* App Preview Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="max-w-sm mx-auto"
+            >
+              <div className="bg-primary-elevated border border-border rounded-2xl p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-medium text-text">Weekend Trip</h3>
+                    <p className="text-sm text-text-tertiary">4 members</p>
+                  </div>
+                  <AvatarGroup
+                    users={[
+                      { name: 'Alex' },
+                      { name: 'Sam' },
+                      { name: 'Jordan' },
+                      { name: 'Taylor' },
+                    ]}
+                    size="sm"
+                  />
                 </div>
-                <div className="flex -space-x-2">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-text border-2 border-primary-elevated" />
-                  ))}
+
+                <div className="bg-accent-emerald/5 border border-accent-emerald/20 rounded-xl p-5 mb-4">
+                  <div className="flex items-center gap-3 mb-1">
+                    <ArrowUpRight className="w-5 h-5 text-accent-emerald" />
+                    <span className="text-sm text-text-secondary">You're owed</span>
+                  </div>
+                  <p className="text-3xl font-semibold text-accent-emerald">
+                    +$156.50
+                  </p>
                 </div>
-              </div>
 
-              <div className="bg-primary rounded-2xl p-6 mb-4">
-                <p className="text-sm text-text-secondary mb-2">Your balance</p>
-                <p className="text-4xl font-light text-text">
-                  +$156.50
-                </p>
-                <p className="text-sm text-text mt-1">You are owed</p>
+                <button className="w-full bg-accent-emerald hover:bg-accent-emerald-dark text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2">
+                  <span>Settle Up</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
+            </motion.div>
 
-              <button className="w-full bg-text hover:bg-text/90 text-primary font-medium py-3 px-4 rounded-xl transition-all duration-base flex items-center justify-center gap-2">
-                <span>Settle up</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+            {/* Trust indicators */}
+            <div className="mt-16 flex flex-wrap items-center justify-center gap-6 text-sm text-text-tertiary">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                <span>Bank-level security</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                <span>10+ currencies</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                <span>Instant sync</span>
+              </div>
             </div>
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="px-4 py-8 sm:px-6 lg:px-8 text-center text-text-secondary text-sm">
-          <p>Split bills effortlessly. No spreadsheets required.</p>
+        <footer className="px-4 py-8 sm:px-6 lg:px-8 text-center">
+          <p className="text-sm text-text-tertiary">
+            Split bills effortlessly with MoneyMate
+          </p>
         </footer>
       </div>
     </div>
@@ -216,158 +269,232 @@ function Dashboard({ user }: { user: any }) {
     },
   });
 
+  // Calculate total balance across all groups
+  const totalBalance = groups.reduce((acc: number, group: any) => {
+    return acc + (group.userBalance || 0);
+  }, 0);
+
+  const positiveBalance = groups.reduce((acc: number, group: any) => {
+    const balance = group.userBalance || 0;
+    return acc + (balance > 0 ? balance : 0);
+  }, 0);
+
+  const negativeBalance = groups.reduce((acc: number, group: any) => {
+    const balance = group.userBalance || 0;
+    return acc + (balance < 0 ? Math.abs(balance) : 0);
+  }, 0);
+
   if (isLoading) {
     return <LoadingSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-primary">
-      {/* Header */}
-      <header className="border-b border-border px-4 py-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-text rounded-xl flex items-center justify-center">
-              <Receipt className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl font-audiowide font-bold text-text">Money Mate</h1>
-              <p className="text-xs text-text-secondary">Split bills effortlessly</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link href="/settings" className="text-text-secondary hover:text-text transition-colors duration-base">
-              <Settings className="w-5 h-5" />
-            </Link>
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-text">{user.name}</p>
-                <p className="text-xs text-text-secondary">{user.email}</p>
-              </div>
-              {user.image && (
-                <img src={user.image} alt={user.name || ''} className="w-8 h-8 rounded-full" />
-              )}
-            </div>
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="text-text-secondary hover:text-text transition-colors duration-base"
-              title="Sign out"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-primary flex">
+      {/* Desktop Sidebar */}
+      <Sidebar user={user} onCreateGroup={() => setShowCreateGroup(true)} />
 
       {/* Main Content */}
-      <main className="px-4 py-8 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-light text-text">Your Groups</h2>
-            <button
-              onClick={() => setShowCreateGroup(true)}
-              className="hidden sm:flex items-center gap-2 bg-text hover:bg-text/90 text-primary px-6 py-2.5 rounded-xl font-medium transition-all duration-base"
-            >
-              <Plus className="w-5 h-5" />
-              Create Group
-            </button>
-          </div>
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Header */}
+        <Header user={user} title="Dashboard" showSearch />
 
-          {groups.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 bg-primary-elevated rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-10 h-10 text-text" />
+        {/* Content */}
+        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8 pb-24 lg:pb-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Welcome & Summary Section */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-text mb-1">
+                Welcome back, {user.name?.split(' ')[0] || 'there'}
+              </h2>
+              <p className="text-text-secondary">
+                Here's your expense summary across all groups
+              </p>
+            </div>
+
+            {/* Balance Summary Cards */}
+            <div className="grid sm:grid-cols-3 gap-4 mb-8">
+              {/* Total Balance */}
+              <div className={`
+                p-5 rounded-xl border transition-all
+                ${totalBalance > 0
+                  ? 'bg-accent-emerald/5 border-accent-emerald/20'
+                  : totalBalance < 0
+                    ? 'bg-accent-rose/5 border-accent-rose/20'
+                    : 'bg-primary-elevated border-border-subtle'
+                }
+              `}>
+                <div className="flex items-center gap-2 mb-3">
+                  {totalBalance > 0 ? (
+                    <ArrowUpRight className="w-5 h-5 text-accent-emerald" />
+                  ) : totalBalance < 0 ? (
+                    <ArrowDownRight className="w-5 h-5 text-accent-rose" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5 text-text-tertiary" />
+                  )}
+                  <span className="text-sm text-text-secondary">Total Balance</span>
+                </div>
+                <p className={`
+                  text-2xl font-semibold
+                  ${totalBalance > 0
+                    ? 'text-accent-emerald'
+                    : totalBalance < 0
+                      ? 'text-accent-rose'
+                      : 'text-text-tertiary'
+                  }
+                `}>
+                  {totalBalance >= 0 ? '+' : '-'}${Math.abs(totalBalance).toFixed(2)}
+                </p>
               </div>
-              <h3 className="text-xl font-medium text-text mb-2">No groups yet</h3>
-              <p className="text-text-secondary mb-6">Create your first group to start tracking expenses</p>
+
+              {/* You're Owed */}
+              <div className="p-5 rounded-xl bg-primary-elevated border border-border-subtle">
+                <div className="flex items-center gap-2 mb-3">
+                  <ArrowUpRight className="w-5 h-5 text-accent-emerald" />
+                  <span className="text-sm text-text-secondary">You're owed</span>
+                </div>
+                <p className="text-2xl font-semibold text-accent-emerald">
+                  +${positiveBalance.toFixed(2)}
+                </p>
+              </div>
+
+              {/* You Owe */}
+              <div className="p-5 rounded-xl bg-primary-elevated border border-border-subtle">
+                <div className="flex items-center gap-2 mb-3">
+                  <ArrowDownRight className="w-5 h-5 text-accent-rose" />
+                  <span className="text-sm text-text-secondary">You owe</span>
+                </div>
+                <p className="text-2xl font-semibold text-accent-rose">
+                  -${negativeBalance.toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            {/* Groups Section */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-medium text-text">Your Groups</h3>
               <button
                 onClick={() => setShowCreateGroup(true)}
-                className="inline-flex items-center gap-2 bg-text hover:bg-text/90 text-primary px-6 py-3 rounded-xl font-medium transition-all duration-base"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-emerald hover:bg-accent-emerald-dark text-white text-sm font-medium transition-all duration-200 hover:shadow-glow-emerald"
               >
-                <Plus className="w-5 h-5" />
-                Create Your First Group
+                <Plus className="w-4 h-4" />
+                New Group
               </button>
             </div>
-          ) : (
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {groups.map((group: any) => (
-                <motion.div
-                  key={group.id}
-                  variants={item}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  className="bg-primary-elevated border border-border-subtle rounded-2xl p-6 hover:border-border transition-all duration-base cursor-pointer"
-                  onClick={() => router.push(`/groups/${group.id}`)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-medium text-text mb-1">{group.name}</h3>
-                      {group.description && (
-                        <p className="text-sm text-text-secondary line-clamp-2">{group.description}</p>
-                      )}
-                    </div>
-                    <span className="text-2xl">{group.currencySymbol}</span>
-                  </div>
 
-                  <div className="flex items-center gap-2 text-sm text-text-secondary">
-                    <Users className="w-4 h-4" />
-                    <span>{group.memberCount} {group.memberCount === 1 ? 'member' : 'members'}</span>
-                  </div>
+            {groups.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="No groups yet"
+                description="Create your first group to start tracking shared expenses with friends, roommates, or travel buddies."
+                action={{
+                  label: 'Create Your First Group',
+                  onClick: () => setShowCreateGroup(true),
+                }}
+              />
+            ) : (
+              <motion.div
+                variants={container}
+                initial="hidden"
+                animate="show"
+                className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              >
+                {groups.map((group: any) => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    onClick={() => router.push(`/groups/${group.id}`)}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </div>
+        </main>
 
-                  {group.role === 'admin' && (
-                    <div className="mt-3">
-                      <span className="inline-flex items-center text-xs bg-primary-hover text-text px-2 py-1 rounded-full">
-                        Admin
-                      </span>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </div>
-      </main>
+        {/* Mobile Bottom Navigation */}
+        <MobileNav onCreateExpense={() => setShowCreateGroup(true)} />
+      </div>
 
-      {/* Create Group - Desktop Dialog */}
+      {/* Create Group Dialog */}
       <Dialog open={showCreateGroup} onOpenChange={setShowCreateGroup}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-primary-elevated border-border">
           <DialogHeader>
-            <DialogTitle>Create New Group</DialogTitle>
+            <DialogTitle className="text-text">Create New Group</DialogTitle>
           </DialogHeader>
           <CreateGroupForm onSuccess={() => setShowCreateGroup(false)} />
         </DialogContent>
       </Dialog>
-
-      {/* Create Group - Mobile Drawer */}
-      <CreateGroupDrawer />
     </div>
   );
 }
 
-function CreateGroupDrawer() {
-  const [isOpen, setIsOpen] = useState(false);
+function GroupCard({ group, onClick }: { group: any; onClick: () => void }) {
+  const balance = group.userBalance || 0;
+  const isPositive = balance > 0;
+  const isNegative = balance < 0;
+  const currencySymbol = group.currencySymbol || '$';
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>
-        <button className="sm:hidden fixed bottom-6 right-6 b-safe-4 r-safe-4 z-40 w-14 h-14 rounded-full bg-text hover:bg-text/90 text-primary flex items-center justify-center shadow-lg transition-all duration-base">
-          <Plus className="w-6 h-6" />
-        </button>
-      </DrawerTrigger>
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
-      )}
-      <DrawerContent className="bg-primary-elevated border-t border-border px-2">
-        <div className="w-full max-w-md mx-auto px-4 py-6 pb-12">
-          <h2 className="text-xl font-medium text-text mb-6">Create New Group</h2>
-          <CreateGroupForm onSuccess={() => setIsOpen(false)} />
+    <motion.div
+      variants={item}
+      whileHover={{ y: -4 }}
+      className="group bg-primary-elevated border border-border-subtle hover:border-accent-emerald/50 rounded-xl p-5 cursor-pointer transition-all duration-200"
+      onClick={onClick}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-medium text-text truncate mb-1">
+            {group.name}
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-tertiary">
+              {group.memberCount} {group.memberCount === 1 ? 'member' : 'members'}
+            </span>
+            {group.role === 'admin' && (
+              <Badge variant="emerald" size="sm">Admin</Badge>
+            )}
+          </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+        <div className="text-xl text-text-tertiary">
+          {currencySymbol}
+        </div>
+      </div>
+
+      {/* Balance */}
+      <div className={`
+        p-3 rounded-lg transition-colors
+        ${isPositive
+          ? 'bg-accent-emerald/10'
+          : isNegative
+            ? 'bg-accent-rose/10'
+            : 'bg-primary-hover'
+        }
+      `}>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-text-secondary">
+            {isPositive ? "You're owed" : isNegative ? 'You owe' : 'Settled up'}
+          </span>
+          <span className={`
+            font-semibold
+            ${isPositive
+              ? 'text-accent-emerald'
+              : isNegative
+                ? 'text-accent-rose'
+                : 'text-text-tertiary'
+            }
+          `}>
+            {isPositive && '+'}
+            {currencySymbol}{Math.abs(balance).toFixed(2)}
+          </span>
+        </div>
+      </div>
+
+      {/* Hover indicator */}
+      <div className="mt-4 flex items-center justify-end text-xs text-text-tertiary group-hover:text-accent-emerald transition-colors">
+        <span>View details</span>
+        <ArrowRight className="w-3 h-3 ml-1" />
+      </div>
+    </motion.div>
   );
 }
 
@@ -413,29 +540,29 @@ function CreateGroupForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <label className="block text-sm font-medium text-text mb-2">
-          Group Name *
+          Group Name
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full px-4 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-text-tertiary focus:border-text-secondary bg-primary-elevated text-text placeholder-text-tertiary transition-all duration-fast text-sm"
-          placeholder="e.g., Roommates, Trip to Paris"
+          className="w-full px-4 py-3 border border-border rounded-xl bg-primary text-text placeholder-text-tertiary focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald/20 transition-all text-sm"
+          placeholder="e.g., Roommates, Paris Trip"
           required
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-text mb-2">
-          Description (optional)
+          Description <span className="text-text-tertiary">(optional)</span>
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full px-4 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-text-tertiary focus:border-text-secondary bg-primary-elevated text-text placeholder-text-tertiary transition-all duration-fast text-sm resize-none"
+          className="w-full px-4 py-3 border border-border rounded-xl bg-primary text-text placeholder-text-tertiary focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald/20 transition-all text-sm resize-none"
           placeholder="What's this group for?"
           rows={2}
         />
@@ -443,43 +570,44 @@ function CreateGroupForm({ onSuccess }: { onSuccess: () => void }) {
 
       <div>
         <label className="block text-sm font-medium text-text mb-2">
-          Currency *
+          Currency
         </label>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <DollarSign className="w-4 h-4 text-text-tertiary" />
           </div>
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-text-tertiary focus:border-text-secondary bg-primary-elevated text-text appearance-none cursor-pointer transition-all duration-fast text-sm"
+            className="w-full pl-10 pr-4 py-3 border border-border rounded-xl bg-primary text-text focus:border-accent-emerald focus:ring-1 focus:ring-accent-emerald/20 appearance-none cursor-pointer transition-all text-sm"
             required
           >
             {CURRENCIES.map((curr) => (
               <option key={curr.code} value={curr.code}>
-                {curr.symbol} - {curr.name} ({curr.code})
+                {curr.symbol} {curr.name} ({curr.code})
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={createGroupMutation.isPending}
-          className="flex-1 bg-text hover:bg-text/90 text-primary font-medium py-2.5 px-4 rounded-xl transition-all duration-base flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {createGroupMutation.isPending ? (
-            <>Creating...</>
-          ) : (
-            <>
-              <Plus className="w-4 h-4" />
-              Create Group
-            </>
-          )}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={createGroupMutation.isPending || !name}
+        className="w-full bg-accent-emerald hover:bg-accent-emerald-dark disabled:bg-accent-emerald/50 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 text-sm disabled:cursor-not-allowed"
+      >
+        {createGroupMutation.isPending ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Creating...
+          </>
+        ) : (
+          <>
+            <Plus className="w-4 h-4" />
+            Create Group
+          </>
+        )}
+      </button>
     </form>
   );
 }
