@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Plus, Users, Receipt, Settings as SettingsIcon,
   LayoutGrid, CreditCard, UserCheck, Trash2, UserPlus, Check, X,
@@ -91,6 +91,28 @@ export default function GroupDetailPage() {
 
   const balances = balancesData?.balances || [];
   const suggestions = balancesData?.suggestions || [];
+  const queryClient = useQueryClient();
+
+  // Reminder mutation
+  const sendReminderMutation = useMutation({
+    mutationFn: async ({ userId, customMessage }: { userId: string; customMessage?: string }) => {
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'reminder',
+          userId,
+          groupId,
+          customMessage,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to send reminder');
+      return res.json();
+    },
+    onSuccess: () => {
+      // Could show a toast notification here
+    },
+  });
 
   if (authLoading || groupLoading) {
     return <LoadingSkeleton />;
@@ -196,6 +218,9 @@ export default function GroupDetailPage() {
                 onSettleUp={(suggestion: any) => {
                   setSettlementData(suggestion);
                   setShowSettlement(true);
+                }}
+                onRemind={(userId: string) => {
+                  sendReminderMutation.mutate({ userId });
                 }}
               />
             </motion.div>
@@ -309,7 +334,7 @@ function LoadingSkeleton() {
   );
 }
 
-function OverviewTab({ group, user, userBalance, balances, suggestions, expenses, settlements, onSettleUp }: any) {
+function OverviewTab({ group, user, userBalance, balances, suggestions, expenses, settlements, onSettleUp, onRemind }: any) {
   const balance = userBalance?.balance || 0;
 
   // Get who owes user and who user owes
@@ -432,6 +457,8 @@ function OverviewTab({ group, user, userBalance, balances, suggestions, expenses
                 suggestion={suggestion}
                 currencySymbol={group.currencySymbol}
                 onSettle={() => onSettleUp(suggestion)}
+                onRemind={() => onRemind(suggestion.fromUserId)}
+                currentUserId={user?.id}
               />
             ))}
           </div>
@@ -1249,16 +1276,48 @@ function AddExpenseDrawer({ isOpen, onClose, group, members }: any) {
 
 function SettlementDrawer({ isOpen, onClose, group, settlementData, members }: any) {
   const queryClient = useQueryClient();
+  const [amount, setAmount] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  // Reset amount when settlement data changes
+  useEffect(() => {
+    if (settlementData) {
+      setAmount(settlementData.amount.toFixed(2));
+      setError('');
+    }
+  }, [settlementData]);
+
+  const maxAmount = settlementData?.amount || 0;
+  const currentAmount = parseFloat(amount) || 0;
+  const isPartialPayment = currentAmount < maxAmount && currentAmount > 0;
+  const remainingAmount = maxAmount - currentAmount;
+
+  const validateAmount = (value: string) => {
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) {
+      setError('Please enter a valid amount');
+      return false;
+    }
+    if (num > maxAmount) {
+      setError(`Amount cannot exceed ${group.currencySymbol}${maxAmount.toFixed(2)}`);
+      return false;
+    }
+    setError('');
+    return true;
+  };
 
   const createSettlementMutation = useMutation({
     mutationFn: async () => {
+      if (!validateAmount(amount)) {
+        throw new Error('Invalid amount');
+      }
       const res = await fetch(`/api/groups/${group.id}/settlements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fromUserId: settlementData.fromUserId,
           toUserId: settlementData.toUserId,
-          amount: settlementData.amount,
+          amount: parseFloat(amount),
         }),
       });
       if (!res.ok) throw new Error('Failed to create settlement');
@@ -1277,7 +1336,7 @@ function SettlementDrawer({ isOpen, onClose, group, settlementData, members }: a
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="bg-primary-elevated border-border">
         <DialogHeader>
-          <DialogTitle className="text-text">Confirm Settlement</DialogTitle>
+          <DialogTitle className="text-text">Record Settlement</DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
@@ -1301,10 +1360,60 @@ function SettlementDrawer({ isOpen, onClose, group, settlementData, members }: a
             </div>
           </div>
 
-          <div className="text-center">
-            <p className="text-3xl font-semibold text-accent-emerald">
-              {group.currencySymbol}{settlementData.amount.toFixed(2)}
-            </p>
+          {/* Editable Amount */}
+          <div className="space-y-3">
+            <div className="text-center">
+              <label className="text-xs text-text-tertiary block mb-2">Settlement Amount</label>
+              <div className="relative inline-flex items-center">
+                <span className="text-2xl font-semibold text-text-secondary mr-1">{group.currencySymbol}</span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                    if (e.target.value) validateAmount(e.target.value);
+                  }}
+                  className="text-3xl font-semibold text-accent-emerald bg-transparent border-b-2 border-accent-emerald/30 focus:border-accent-emerald outline-none text-center w-32"
+                  step="0.01"
+                  min="0.01"
+                  max={maxAmount}
+                />
+              </div>
+              {error && (
+                <p className="text-xs text-accent-rose mt-2">{error}</p>
+              )}
+            </div>
+
+            <div className="text-center text-sm text-text-tertiary">
+              <p>Suggested: {group.currencySymbol}{maxAmount.toFixed(2)}</p>
+              {isPartialPayment && (
+                <p className="text-accent-amber mt-1">
+                  Remaining after payment: {group.currencySymbol}{remainingAmount.toFixed(2)}
+                </p>
+              )}
+            </div>
+
+            {/* Quick amount buttons */}
+            <div className="flex justify-center gap-2 mt-3">
+              <button
+                onClick={() => {
+                  setAmount(maxAmount.toFixed(2));
+                  setError('');
+                }}
+                className="px-3 py-1 text-xs rounded-full bg-accent-emerald/10 text-accent-emerald hover:bg-accent-emerald/20 transition-colors"
+              >
+                Full Amount
+              </button>
+              <button
+                onClick={() => {
+                  setAmount((maxAmount / 2).toFixed(2));
+                  setError('');
+                }}
+                className="px-3 py-1 text-xs rounded-full bg-primary-hover text-text-secondary hover:bg-primary-elevated transition-colors"
+              >
+                Half
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1314,11 +1423,13 @@ function SettlementDrawer({ isOpen, onClose, group, settlementData, members }: a
           </Button>
           <Button
             onClick={() => createSettlementMutation.mutate()}
-            disabled={createSettlementMutation.isPending}
+            disabled={createSettlementMutation.isPending || !!error || !amount}
             className="bg-accent-emerald hover:bg-accent-emerald-dark"
           >
             {createSettlementMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isPartialPayment ? (
+              'Record Partial Payment'
             ) : (
               'Confirm Settlement'
             )}

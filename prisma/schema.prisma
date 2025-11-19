@@ -55,6 +55,8 @@ model User {
   expenseSplits     ExpenseSplit[]
   settlementsFrom   Settlement[]      @relation("SettlementsFrom")
   settlementsTo     Settlement[]      @relation("SettlementsTo")
+  notificationsReceived Notification[] @relation("NotificationRecipient")
+  notificationsSent     Notification[] @relation("NotificationSender")
 }
 
 model VerificationToken {
@@ -76,10 +78,11 @@ model Group {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  createdBy   User          @relation("GroupCreator", fields: [createdById], references: [id])
-  members     GroupMember[]
-  expenses    Expense[]
-  settlements Settlement[]
+  createdBy     User           @relation("GroupCreator", fields: [createdById], references: [id])
+  members       GroupMember[]
+  expenses      Expense[]
+  settlements   Settlement[]
+  notifications Notification[]
 
   @@index([createdById])
 }
@@ -167,4 +170,24 @@ model Settlement {
   @@index([groupId])
   @@index([fromUserId])
   @@index([toUserId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // reminder, group_invite, expense_added, settlement_received
+  message   String
+  link      String?  // Link to relevant page (e.g., group page)
+  isRead    Boolean  @default(false)
+  userId    String   // Recipient
+  fromUserId String? // Sender (for reminders)
+  groupId   String?  // Related group
+  createdAt DateTime @default(now())
+
+  user     User   @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  fromUser User?  @relation("NotificationSender", fields: [fromUserId], references: [id], onDelete: SetNull)
+  group    Group? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
 }

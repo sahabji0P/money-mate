@@ -89,6 +89,29 @@ export async function POST(
       },
     });
 
+    // Get group and adder info for notification
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      select: { name: true },
+    });
+
+    const adder = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true },
+    });
+
+    // Create notification for the added user
+    await prisma.notification.create({
+      data: {
+        type: 'group_invite',
+        message: `${adder?.name || 'Someone'} added you to the group "${group?.name || 'a group'}"`,
+        link: `/groups/${groupId}`,
+        userId: userToAdd.id,
+        fromUserId: session.user.id,
+        groupId,
+      },
+    });
+
     return NextResponse.json(newMember, { status: 201 });
   } catch (error) {
     console.error('Error adding member:', error);

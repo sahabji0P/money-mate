@@ -270,6 +270,34 @@ export async function POST(
       },
     });
 
+    // Get group name for notifications
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      select: { name: true },
+    });
+
+    // Get creator name
+    const creator = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true },
+    });
+
+    // Create notifications for users in the split (excluding creator)
+    const splitUserIds = splits.map((s: { userId: string }) => s.userId).filter((id: string) => id !== session.user.id);
+
+    if (splitUserIds.length > 0) {
+      await prisma.notification.createMany({
+        data: splitUserIds.map((userId: string) => ({
+          type: 'expense_added',
+          message: `${creator?.name || 'Someone'} added an expense "${description}" (${(amount / 100).toFixed(2)}) in ${group?.name || 'a group'}`,
+          link: `/groups/${groupId}`,
+          userId,
+          fromUserId: session.user.id,
+          groupId,
+        })),
+      });
+    }
+
     // Convert cents to dollars for frontend
     const expenseInDollars = {
       ...expense,

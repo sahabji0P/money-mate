@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Bell } from 'lucide-react';
 import Avatar from '@/components/shared/Avatar';
 
 interface SettlementCardProps {
@@ -81,15 +81,22 @@ interface SettlementSuggestionProps {
   };
   currencySymbol: string;
   onSettle: () => void;
+  onRemind?: () => void;
   isLoading?: boolean;
+  currentUserId?: string;
 }
 
 export function SettlementSuggestion({
   suggestion,
   currencySymbol,
   onSettle,
-  isLoading
+  onRemind,
+  isLoading,
+  currentUserId
 }: SettlementSuggestionProps) {
+  // Show remind button if current user is owed money (toUserId)
+  const canRemind = currentUserId && currentUserId === suggestion.toUserId;
+
   return (
     <div className="p-4 rounded-xl bg-primary-elevated border border-border-subtle">
       <div className="flex items-center justify-between mb-4">
@@ -116,17 +123,28 @@ export function SettlementSuggestion({
         <span className="text-2xl font-semibold text-text">
           {currencySymbol}{suggestion.amount.toFixed(2)}
         </span>
-        <button
-          onClick={onSettle}
-          disabled={isLoading}
-          className="px-4 py-2 rounded-lg bg-accent-emerald hover:bg-accent-emerald-dark disabled:bg-accent-emerald/50 text-white text-sm font-medium transition-all disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            'Settle Up'
+        <div className="flex items-center gap-2">
+          {canRemind && onRemind && (
+            <button
+              onClick={onRemind}
+              className="p-2 rounded-lg bg-accent-amber/10 hover:bg-accent-amber/20 text-accent-amber transition-all"
+              title="Send reminder"
+            >
+              <Bell className="w-4 h-4" />
+            </button>
           )}
-        </button>
+          <button
+            onClick={onSettle}
+            disabled={isLoading}
+            className="px-4 py-2 rounded-lg bg-accent-emerald hover:bg-accent-emerald-dark disabled:bg-accent-emerald/50 text-white text-sm font-medium transition-all disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              'Settle Up'
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

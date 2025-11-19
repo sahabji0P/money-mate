@@ -369,6 +369,68 @@ function Dashboard({ user }: { user: any }) {
               </div>
             </div>
 
+            {/* Pending Settlements Section */}
+            {(positiveBalance > 0 || negativeBalance > 0) && (
+              <div className="mb-8">
+                <h3 className="text-lg font-medium text-text mb-4">Pending Settlements</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {/* You Owe */}
+                  {negativeBalance > 0 && (
+                    <div className="p-4 rounded-xl bg-accent-rose/5 border border-accent-rose/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ArrowDownRight className="w-4 h-4 text-accent-rose" />
+                        <span className="text-sm font-medium text-text">Payments to Make</span>
+                      </div>
+                      <div className="space-y-2">
+                        {groups
+                          .filter((g: any) => (g.userBalance || 0) < 0)
+                          .sort((a: any, b: any) => (a.userBalance || 0) - (b.userBalance || 0))
+                          .map((group: any) => (
+                            <Link
+                              key={group.id}
+                              href={`/groups/${group.id}`}
+                              className="flex items-center justify-between p-2 rounded-lg hover:bg-accent-rose/10 transition-colors"
+                            >
+                              <span className="text-sm text-text truncate">{group.name}</span>
+                              <span className="text-sm font-medium text-accent-rose whitespace-nowrap">
+                                -${Math.abs(group.userBalance).toFixed(2)}
+                              </span>
+                            </Link>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* You're Owed */}
+                  {positiveBalance > 0 && (
+                    <div className="p-4 rounded-xl bg-accent-emerald/5 border border-accent-emerald/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ArrowUpRight className="w-4 h-4 text-accent-emerald" />
+                        <span className="text-sm font-medium text-text">Payments to Receive</span>
+                      </div>
+                      <div className="space-y-2">
+                        {groups
+                          .filter((g: any) => (g.userBalance || 0) > 0)
+                          .sort((a: any, b: any) => (b.userBalance || 0) - (a.userBalance || 0))
+                          .map((group: any) => (
+                            <Link
+                              key={group.id}
+                              href={`/groups/${group.id}`}
+                              className="flex items-center justify-between p-2 rounded-lg hover:bg-accent-emerald/10 transition-colors"
+                            >
+                              <span className="text-sm text-text truncate">{group.name}</span>
+                              <span className="text-sm font-medium text-accent-emerald whitespace-nowrap">
+                                +${group.userBalance.toFixed(2)}
+                              </span>
+                            </Link>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Groups Section */}
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium text-text">Your Groups</h3>

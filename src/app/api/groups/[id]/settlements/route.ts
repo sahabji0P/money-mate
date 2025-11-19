@@ -163,6 +163,29 @@ export async function POST(
       },
     });
 
+    // Get group and payer info for notification
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      select: { name: true },
+    });
+
+    const payer = await prisma.user.findUnique({
+      where: { id: fromUserId },
+      select: { name: true },
+    });
+
+    // Create notification for the recipient
+    await prisma.notification.create({
+      data: {
+        type: 'settlement_received',
+        message: `${payer?.name || 'Someone'} paid you ${(amountInCents / 100).toFixed(2)} in ${group?.name || 'a group'}`,
+        link: `/groups/${groupId}`,
+        userId: toUserId,
+        fromUserId,
+        groupId,
+      },
+    });
+
     // Convert cents to dollars for frontend
     const settlementInDollars = {
       ...settlement,
