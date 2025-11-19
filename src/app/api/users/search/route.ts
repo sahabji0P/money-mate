@@ -10,18 +10,32 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const email = searchParams.get('email');
+    const query = searchParams.get('q') || searchParams.get('email');
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email parameter required' }, { status: 400 });
+    if (!query || query.length < 3) {
+      return NextResponse.json({ error: 'Search query must be at least 3 characters' }, { status: 400 });
     }
 
-    // Search for users by email (case-insensitive partial match)
+    // Search for users by email or name (case-insensitive partial match)
     const users = await prisma.user.findMany({
       where: {
-        email: {
-          contains: email.toLowerCase(),
-          mode: 'insensitive',
+        OR: [
+          {
+            email: {
+              contains: query.toLowerCase(),
+              mode: 'insensitive',
+            },
+          },
+          {
+            name: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+        ],
+        // Exclude current user from results
+        NOT: {
+          id: session.user.id,
         },
       },
       select: {
