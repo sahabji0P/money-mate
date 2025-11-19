@@ -30,30 +30,45 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { email } = body;
+    const { email, userId } = body;
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
-    }
+    let userToAdd;
 
-    // Normalize email (lowercase and trim)
-    const normalizedEmail = email.toLowerCase().trim();
+    // Accept either userId or email
+    if (userId) {
+      // Find user by ID
+      userToAdd = await prisma.user.findUnique({
+        where: { id: userId },
+      });
 
-    // Find user by email (case-insensitive)
-    const userToAdd = await prisma.user.findFirst({
-      where: {
-        email: {
-          equals: normalizedEmail,
-          mode: 'insensitive',
-        }
-      },
-    });
+      if (!userToAdd) {
+        return NextResponse.json(
+          { error: 'User not found.' },
+          { status: 404 }
+        );
+      }
+    } else if (email) {
+      // Normalize email (lowercase and trim)
+      const normalizedEmail = email.toLowerCase().trim();
 
-    if (!userToAdd) {
-      return NextResponse.json(
-        { error: 'User not found. They need to sign up first.' },
-        { status: 404 }
-      );
+      // Find user by email (case-insensitive)
+      userToAdd = await prisma.user.findFirst({
+        where: {
+          email: {
+            equals: normalizedEmail,
+            mode: 'insensitive',
+          }
+        },
+      });
+
+      if (!userToAdd) {
+        return NextResponse.json(
+          { error: 'User not found. They need to sign up first.' },
+          { status: 404 }
+        );
+      }
+    } else {
+      return NextResponse.json({ error: 'User ID or email is required' }, { status: 400 });
     }
 
     // Check if already a member
