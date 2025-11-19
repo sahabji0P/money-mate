@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { NextResponse } from 'next/server';
 
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const mimeType = image.split(';')[0].split(':')[1];
 
     // Use Gemini 2.5 Flash for fast receipt analysis
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `You are analyzing a receipt or bill image to extract expense details for a bill-splitting app.
 
