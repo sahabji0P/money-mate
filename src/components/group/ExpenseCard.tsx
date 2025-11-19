@@ -1,7 +1,6 @@
 'use client';
 
 import { CATEGORIES } from '@/lib/constants';
-import Avatar from '@/components/shared/Avatar';
 
 interface ExpenseCardProps {
   expense: {
@@ -9,8 +8,8 @@ interface ExpenseCardProps {
     description: string;
     amount: number;
     category: string;
-    createdAt: string;
-    paidBy: Array<{
+    date: string;
+    payments: Array<{
       user: {
         id: string;
         name: string;
@@ -25,11 +24,6 @@ interface ExpenseCardProps {
       };
       amount: number;
     }>;
-    items?: Array<{
-      name: string;
-      quantity: number;
-      price: number;
-    }>;
   };
   currencySymbol: string;
   onClick?: () => void;
@@ -37,9 +31,9 @@ interface ExpenseCardProps {
 
 export default function ExpenseCard({ expense, currencySymbol, onClick }: ExpenseCardProps) {
   const category = CATEGORIES.find(c => c.id === expense.category) || CATEGORIES[5]; // Default to 'other'
-  const paidByNames = expense.paidBy.map(p => p.user.name).join(', ');
-  const splitCount = expense.splits.length;
-  const date = new Date(expense.createdAt);
+  const paidByNames = expense.payments?.map(p => p.user.name).join(', ') || 'Unknown';
+  const splitCount = expense.splits?.length || 0;
+  const date = new Date(expense.date);
   const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   return (
@@ -73,33 +67,13 @@ export default function ExpenseCard({ expense, currencySymbol, onClick }: Expens
 
           <div className="flex items-center gap-2 text-xs text-text-tertiary">
             <span>Paid by {paidByNames}</span>
-            <span>-</span>
-            <span>Split {splitCount} {splitCount === 1 ? 'way' : 'ways'}</span>
+            {splitCount > 0 && (
+              <>
+                <span>·</span>
+                <span>Split {splitCount} {splitCount === 1 ? 'way' : 'ways'}</span>
+              </>
+            )}
           </div>
-
-          {/* Items Preview (if available) */}
-          {expense.items && expense.items.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-border-subtle">
-              <p className="text-xs text-text-tertiary mb-2">Items:</p>
-              <div className="space-y-1">
-                {expense.items.slice(0, 3).map((item, index) => (
-                  <div key={index} className="flex justify-between text-xs">
-                    <span className="text-text-secondary">
-                      {item.quantity}x {item.name}
-                    </span>
-                    <span className="text-text-tertiary">
-                      {currencySymbol}{item.price.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
-                {expense.items.length > 3 && (
-                  <p className="text-xs text-text-tertiary">
-                    +{expense.items.length - 3} more items
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
 
           <p className="mt-2 text-xs text-text-tertiary">
             {formattedDate}
@@ -113,7 +87,7 @@ export default function ExpenseCard({ expense, currencySymbol, onClick }: Expens
 // Compact version for lists
 export function ExpenseCardCompact({ expense, currencySymbol, onClick }: ExpenseCardProps) {
   const category = CATEGORIES.find(c => c.id === expense.category) || CATEGORIES[5];
-  const date = new Date(expense.createdAt);
+  const date = new Date(expense.date);
   const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   return (

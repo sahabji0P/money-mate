@@ -318,8 +318,8 @@ function OverviewTab({ group, user, userBalance, balances, suggestions, expenses
 
   // Recent activity
   const recentActivity = [
-    ...expenses.map((e: any) => ({ ...e, type: 'expense', sortDate: new Date(e.createdAt) })),
-    ...settlements.map((s: any) => ({ ...s, type: 'settlement', sortDate: new Date(s.createdAt) }))
+    ...expenses.map((e: any) => ({ ...e, type: 'expense', sortDate: new Date(e.date) })),
+    ...settlements.map((s: any) => ({ ...s, type: 'settlement', sortDate: new Date(s.date) }))
   ].sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime()).slice(0, 5);
 
   return (
@@ -476,8 +476,8 @@ function OverviewTab({ group, user, userBalance, balances, suggestions, expenses
 function ExpensesTab({ group, expenses, settlements }: any) {
   // Combine and sort all transactions
   const allTransactions = [
-    ...expenses.map((e: any) => ({ ...e, type: 'expense', sortDate: new Date(e.createdAt) })),
-    ...settlements.map((s: any) => ({ ...s, type: 'settlement', sortDate: new Date(s.createdAt) }))
+    ...expenses.map((e: any) => ({ ...e, type: 'expense', sortDate: new Date(e.date) })),
+    ...settlements.map((s: any) => ({ ...s, type: 'settlement', sortDate: new Date(s.date) }))
   ].sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
 
   if (allTransactions.length === 0) {
@@ -775,25 +775,31 @@ function AddExpenseDrawer({ isOpen, onClose, group, members }: any) {
     try {
       const reader = new FileReader();
       reader.onload = async () => {
-        const base64 = (reader.result as string).split(',')[1];
+        const dataUri = reader.result as string;
 
-        const res = await fetch('/api/analyze-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64 }),
-        });
+        try {
+          const res = await fetch('/api/analyze-receipt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: dataUri }),
+          });
 
-        if (!res.ok) {
-          throw new Error('Failed to analyze receipt');
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to analyze receipt');
+          }
+
+          const data = await res.json();
+          setScannedData(data);
+          setScanning(false);
+        } catch (error: any) {
+          setScanError(error.message || 'Could not analyze receipt. Please try again or enter manually.');
+          setScanning(false);
         }
-
-        const data = await res.json();
-        setScannedData(data);
       };
       reader.readAsDataURL(file);
     } catch (error) {
       setScanError('Could not analyze receipt. Please try again or enter manually.');
-    } finally {
       setScanning(false);
     }
   };
@@ -865,9 +871,14 @@ function AddExpenseDrawer({ isOpen, onClose, group, members }: any) {
       amount: amountNum,
       description: description.trim(),
       category,
-      paidBy: [{ oderId: paidBy, amount: amountNum }],
-      splits,
-      items: scannedData?.items,
+      payments: [{ userId: paidBy, amount: amountNum }],
+      splitType,
+      splitBetween,
+      customSplits: splitType === 'custom' ? splits : undefined,
+      percentageSplits: splitType === 'percentage' ? splitBetween.map(id => ({
+        userId: id,
+        percentage: parseFloat(percentages[id] || '0')
+      })) : undefined,
     });
   };
 

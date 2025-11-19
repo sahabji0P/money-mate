@@ -7,7 +7,7 @@ interface SettlementCardProps {
   settlement: {
     id: string;
     amount: number;
-    createdAt: string;
+    date: string;
     fromUser: {
       id: string;
       name: string;
@@ -24,7 +24,7 @@ interface SettlementCardProps {
 }
 
 export default function SettlementCard({ settlement, currencySymbol, onClick }: SettlementCardProps) {
-  const date = new Date(settlement.createdAt);
+  const date = new Date(settlement.date);
   const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   return (

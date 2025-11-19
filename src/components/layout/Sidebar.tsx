@@ -5,9 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home,
-  Users,
-  PieChart,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -31,9 +28,6 @@ export default function Sidebar({ user, onCreateGroup }: SidebarProps) {
 
   const navItems = [
     { href: '/', icon: Home, label: 'Dashboard' },
-    { href: '/groups', icon: Users, label: 'Groups' },
-    { href: '/analytics', icon: PieChart, label: 'Analytics' },
-    { href: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   const isActive = (href: string) => {
