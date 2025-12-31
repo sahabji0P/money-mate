@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
-import { Bell, Search, Menu, Wallet, Check, X, Users, CreditCard, ArrowLeftRight, MessageSquare } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
+import { ArrowLeftRight, Bell, CreditCard, Menu, MessageSquare, Search, Users, Wallet } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 
 interface HeaderProps {
   user?: {
@@ -189,9 +189,8 @@ export default function Header({ user, title, showSearch = false, onMenuClick }:
                       <button
                         key={notification.id}
                         onClick={() => handleNotificationClick(notification)}
-                        className={`w-full px-4 py-3 flex items-start gap-3 hover:bg-primary-hover transition-colors text-left border-b border-border-subtle last:border-0 ${
-                          !notification.isRead ? 'bg-accent-emerald/5' : ''
-                        }`}
+                        className={`w-full px-4 py-3 flex items-start gap-3 hover:bg-primary-hover transition-colors text-left border-b border-border-subtle last:border-0 ${!notification.isRead ? 'bg-accent-emerald/5' : ''
+                          }`}
                       >
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-hover flex items-center justify-center">
                           {getNotificationIcon(notification.type)}
